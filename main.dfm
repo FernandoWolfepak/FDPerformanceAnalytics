@@ -171,41 +171,22 @@ object Form1: TForm1
     Top = 100
     Width = 783
     Height = 264
-    ActivePage = tsCommand
+    ActivePage = CommandTab
     Align = alTop
     TabOrder = 2
-    object tsCommand: TTabSheet
+    object CommandTab: TTabSheet
       Caption = 'Command'
     end
     object ConnectionOptionsTab: TTabSheet
       Caption = 'Connection Options'
       ImageIndex = 1
-      object Button6: TButton
-        Left = 6
-        Top = 248
-        Width = 229
-        Height = 25
-        Caption = '5. Open Table with "BYDESCRIPTION" Index'
-        TabOrder = 0
-      end
-      object ckbFilterFetchOptions: TCheckBox
-        Left = 241
-        Top = 247
-        Width = 46
-        Height = 17
-        Caption = 'Filter'
-        Checked = True
-        State = cbChecked
-        TabOrder = 1
-        OnClick = ckbFilterFetchOptionsClick
-      end
-      object PageControl1: TcxPageControl
+      object PageControlConnection: TcxPageControl
         Left = 0
         Top = 0
         Width = 775
         Height = 236
         Align = alClient
-        TabOrder = 2
+        TabOrder = 0
         Properties.ActivePage = FetchOptionsTab
         Properties.CustomButtons.Buttons = <>
         ClientRectBottom = 232

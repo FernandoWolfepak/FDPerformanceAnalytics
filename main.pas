@@ -37,11 +37,9 @@ type
     CurrentFilterLbl: TLabel;
     CurrentRecordCountLbl: TLabel;
     PageControl: TPageControl;
-    tsCommand: TTabSheet;
+    CommandTab: TTabSheet;
     ConnectionOptionsTab: TTabSheet;
-    Button6: TButton;
-    ckbFilterFetchOptions: TCheckBox;
-    PageControl1: TcxPageControl;
+    PageControlConnection: TcxPageControl;
     FetchOptionsTab: TcxTabSheet;
     lblRecsSkip: TLabel;
     lblRecsMax: TLabel;
@@ -100,7 +98,6 @@ type
     procedure UseOSAuthenticationCBClick(Sender: TObject);
     procedure UseAzureADInteractiveCBClick(Sender: TObject);
     procedure FormShow(Sender: TObject);
-    procedure ckbFilterFetchOptionsClick(Sender: TObject);
     procedure btnFetchOptionsRestoreDefaultsClick(Sender: TObject);
     procedure btnFormatOptionsRestoreDefaultsClick(Sender: TObject);
     procedure btnResourceOptionsRestoreDefaultsClick(Sender: TObject);
@@ -110,7 +107,7 @@ type
     procedure ConnectionCheckTimerTimer(Sender: TObject);
   private
     FUpdatingConnectionToggle: Boolean;
-    procedure Filter(Checked: Boolean);
+    procedure Filter(Checked: Boolean; aFilter: string);
     function PrtYN(const yn: boolean): string;
     procedure SetConnection;
     procedure AssignIndexAndFilterEdits;
@@ -162,13 +159,13 @@ begin
     then CurrentRecordCountLbl.Visible := true;
 end;
 
-procedure TForm1.Filter(Checked: Boolean);
+procedure TForm1.Filter(Checked: Boolean; aFilter: string);
 begin
   try
     FDataSet.Filtered := False;
     if Checked then
     begin
-      FDataSet.Filter := 'DescriptionSrch = ' + tick + 'CASING' + tick;
+      FDataSet.Filter := aFilter;
       FDataSet.Filtered := True;
     end;
   finally
@@ -266,11 +263,6 @@ begin
   LoadFDConnectionOptions;
 end;
 
-procedure TForm1.ckbFilterFetchOptionsClick(Sender: TObject);
-begin
-  Filter(ckbFilterFetchOptions.Checked);
-end;
-
 procedure TForm1.FormShow(Sender: TObject);
 begin
   UseOSAuthenticationCB.Checked := False;
@@ -326,14 +318,7 @@ begin
         end;
       end;
 
-  try
-    if PageControl.TabIndex = FetchOptionsTab.TabIndex then
-      Filter(ckbFilterFetchOptions.Checked)
-    else
-      Filter(False);
-  finally
-    AssignIndexAndFilterEdits;
-  end;
+  AssignIndexAndFilterEdits;
 end;
 
 function TForm1.PrtYN(const yn: boolean): string;
