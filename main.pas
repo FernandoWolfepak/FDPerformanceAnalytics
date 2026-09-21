@@ -484,19 +484,13 @@ begin
       RowsProcessed := 0;
       Notes := '';
 
-      if ADataSet.ClassType <> TFDTable then
-      begin
-        Notes := 'Not applicable to TFDQuery';
-        Exit;
-      end;
-
       KeyField := DetectPerfKeyField(ADataSet);
-      TFDTable(ADataSet).IndexFieldNames := KeyField.FieldName;
+      ADataSet.IndexFieldNames := KeyField.FieldName;
 
       Sample := CollectPerfKeySample(ADataSet, KeyField, 20);
       HitCount := 0;
       for i := 0 to High(Sample) do
-        if TFDTable(ADataSet).FindKey([Sample[i]]) then
+        if ADataSet.FindKey([Sample[i]]) then
           Inc(HitCount);
 
       RowsProcessed := HitCount;
@@ -516,14 +510,8 @@ begin
       RowsProcessed := 0;
       Notes := '';
 
-      if ADataSet.ClassType <> TFDTable then
-      begin
-        Notes := 'Not applicable to TFDQuery';
-        Exit;
-      end;
-
       KeyField := DetectPerfKeyField(ADataSet);
-      TFDTable(ADataSet).IndexFieldNames := KeyField.FieldName;
+      ADataSet.IndexFieldNames := KeyField.FieldName;
 
       Sample := CollectPerfKeySample(ADataSet, KeyField, 20);
       if Length(Sample) = 0 then
@@ -535,7 +523,7 @@ begin
       MinValue := Sample[0];
       MaxValue := Sample[High(Sample)];
 
-      TFDTable(ADataSet).SetRange([MinValue], [MaxValue]);
+      ADataSet.SetRange([MinValue], [MaxValue]);
       try
         ADataSet.First;
         while not ADataSet.Eof do
@@ -544,7 +532,7 @@ begin
           ADataSet.Next;
         end;
       finally
-        TFDTable(ADataSet).CancelRange;
+        ADataSet.CancelRange;
       end;
 
       Notes := Format('Range [%s..%s]', [VarToStr(MinValue), VarToStr(MaxValue)]);
