@@ -12,7 +12,11 @@ uses
   FireDAC.Comp.DataSet, FireDAC.Phys.MSSQL, Vcl.ComCtrls, Vcl.Grids, Vcl.DBGrids,
   FireDAC.Stan.Consts, Vcl.CheckLst, cxCheckBox, cxGraphics, cxControls,
   cxLookAndFeels, cxLookAndFeelPainters, cxContainer, cxEdit, cxCustomListBox,
-  cxCheckListBox, StStrL, dxBarBuiltInMenu, cxPC;
+  cxCheckListBox, StStrL, dxBarBuiltInMenu, cxPC, System.Diagnostics,
+  System.Generics.Collections;
+
+type
+  TPerfTestProc = reference to procedure(ADataSet: TFDDataSet; out RowsProcessed: Integer; out Notes: string);
 
 type
   TForm1 = class(TForm)
@@ -37,7 +41,6 @@ type
     CurrentFilterLbl: TLabel;
     CurrentRecordCountLbl: TLabel;
     PageControl: TPageControl;
-    CommandTab: TTabSheet;
     ConnectionOptionsTab: TTabSheet;
     PageControlConnection: TcxPageControl;
     FetchOptionsTab: TcxTabSheet;
@@ -95,6 +98,17 @@ type
     btnConnect: TButton;
     ConnectionAliveCB: TCheckBox;
     ConnectionCheckTimer: TTimer;
+    PerfTestsTab: TTabSheet;
+    lblPerfTableName: TLabel;
+    cbxPerfTables: TComboBox;
+    btnRefreshPerfTables: TButton;
+    chkPerfUseQuery: TCheckBox;
+    btnRunFullIteration: TButton;
+    btnRunFindKey: TButton;
+    btnRunSetRange: TButton;
+    btnRunLocate: TButton;
+    btnClearPerfResults: TButton;
+    grdPerfResults: TStringGrid;
     procedure UseOSAuthenticationCBClick(Sender: TObject);
     procedure UseAzureADInteractiveCBClick(Sender: TObject);
     procedure FormShow(Sender: TObject);
@@ -105,6 +119,13 @@ type
     procedure btnConnectClick(Sender: TObject);
     procedure ConnectionAliveCBClick(Sender: TObject);
     procedure ConnectionCheckTimerTimer(Sender: TObject);
+    procedure btnRefreshPerfTablesClick(Sender: TObject);
+    procedure chkPerfUseQueryClick(Sender: TObject);
+    procedure btnRunFullIterationClick(Sender: TObject);
+    procedure btnRunFindKeyClick(Sender: TObject);
+    procedure btnRunSetRangeClick(Sender: TObject);
+    procedure btnRunLocateClick(Sender: TObject);
+    procedure btnClearPerfResultsClick(Sender: TObject);
   private
     FUpdatingConnectionToggle: Boolean;
     procedure Filter(Checked: Boolean; aFilter: string);
@@ -115,6 +136,14 @@ type
     function GetDataSet: TFDDataSet;
     function TableExists(aTableName: string): Boolean;
     procedure UpdateConnectionAliveIndicator;
+    procedure EnsurePerfConnection;
+    procedure InitPerfResultsGrid;
+    procedure AutoSizePerfResultsColumns;
+    function FormatPerfElapsed(ElapsedMs: Int64): string;
+    procedure AppendPerfResultRow(const TestName: string; ElapsedMs: Int64; RowsProcessed: Integer; const Notes: string);
+    function DetectPerfKeyField(ADataSet: TFDDataSet): TField;
+    function CollectPerfKeySample(ADataSet: TFDDataSet; AKeyField: TField; ASampleSize: Integer): TArray<Variant>;
+    procedure RunPerfTest(const TestName: string; Proc: TPerfTestProc);
 
     procedure SetFDConnectionOptions;
     procedure SetFetchOptions(AConnection: TFDConnection);
@@ -276,48 +305,338 @@ begin
   LoadResourceOptions(SQLFDConnection);
   LoadUpdateOptions(SQLFDConnection);
 
+  InitPerfResultsGrid;
+
   UpdateConnectionAliveIndicator;
   PageControl.ActivePageIndex := 0;
 end;
 
+procedure TForm1.EnsurePerfConnection;
+begin
+  if SQLFDConnection.Connected then
+    Exit;
+
+  SetConnection;
+  SetFDConnectionOptions;
+  SQLFDConnection.Params.Database := DBNameEdit.Text;
+  SQLFDConnection.Connected := True;
+end;
+
+procedure TForm1.InitPerfResultsGrid;
+begin
+  grdPerfResults.RowCount := 1;
+  grdPerfResults.Cells[0, 0] := 'Test';
+  grdPerfResults.Cells[1, 0] := 'Elapsed';
+  grdPerfResults.Cells[2, 0] := 'Rows';
+  grdPerfResults.Cells[3, 0] := 'Notes';
+  AutoSizePerfResultsColumns;
+end;
+
+function TForm1.FormatPerfElapsed(ElapsedMs: Int64): string;
+var
+  Minutes: Int64;
+  Seconds: Double;
+begin
+  if ElapsedMs < 1000 then
+    Result := Format('%d ms', [ElapsedMs])
+  else if ElapsedMs < 60000 then
+    Result := Format('%.2f s', [ElapsedMs / 1000])
+  else
+  begin
+    Minutes := ElapsedMs div 60000;
+    Seconds := (ElapsedMs mod 60000) / 1000;
+    Result := Format('%dm %.2fs', [Minutes, Seconds]);
+  end;
+end;
+
+procedure TForm1.AppendPerfResultRow(const TestName: string; ElapsedMs: Int64; RowsProcessed: Integer; const Notes: string);
+var
+  Row: Integer;
+begin
+  Row := grdPerfResults.RowCount;
+  grdPerfResults.RowCount := Row + 1;
+  grdPerfResults.Cells[0, Row] := TestName;
+  grdPerfResults.Cells[1, Row] := FormatPerfElapsed(ElapsedMs);
+  grdPerfResults.Cells[2, Row] := IntToStr(RowsProcessed);
+  grdPerfResults.Cells[3, Row] := Notes;
+  AutoSizePerfResultsColumns;
+end;
+
+procedure TForm1.AutoSizePerfResultsColumns;
+const
+  Padding = 12;
+var
+  Col, Row, MaxWidth, TextW: Integer;
+begin
+  for Col := 0 to grdPerfResults.ColCount - 1 do
+  begin
+    MaxWidth := 0;
+    for Row := 0 to grdPerfResults.RowCount - 1 do
+    begin
+      TextW := grdPerfResults.Canvas.TextWidth(grdPerfResults.Cells[Col, Row]);
+      if TextW > MaxWidth then
+        MaxWidth := TextW;
+    end;
+    grdPerfResults.ColWidths[Col] := MaxWidth + Padding;
+  end;
+end;
+
+function TForm1.DetectPerfKeyField(ADataSet: TFDDataSet): TField;
+var
+  FieldName: string;
+begin
+  if ADataSet.IndexDefs.Count > 0 then
+  begin
+    FieldName := ADataSet.IndexDefs[0].Fields;
+    if Pos(';', FieldName) > 0 then
+      FieldName := Copy(FieldName, 1, Pos(';', FieldName) - 1);
+    Result := ADataSet.FieldByName(FieldName);
+  end
+  else
+    Result := ADataSet.Fields[0];
+end;
+
+function TForm1.CollectPerfKeySample(ADataSet: TFDDataSet; AKeyField: TField; ASampleSize: Integer): TArray<Variant>;
+var
+  Keys: TList<Variant>;
+  SampleStep, Count: Integer;
+begin
+  Keys := TList<Variant>.Create;
+  try
+    SampleStep := Max(1, ADataSet.RecordCount div ASampleSize);
+    Count := 0;
+    ADataSet.First;
+    while (not ADataSet.Eof) and (Keys.Count < ASampleSize) do
+    begin
+      if Count mod SampleStep = 0 then
+        Keys.Add(AKeyField.Value);
+      Inc(Count);
+      ADataSet.Next;
+    end;
+    Result := Keys.ToArray;
+  finally
+    Keys.Free;
+  end;
+end;
+
+procedure TForm1.RunPerfTest(const TestName: string; Proc: TPerfTestProc);
+var
+  DataSet: TFDDataSet;
+  Stopwatch: TStopwatch;
+  RowsProcessed: Integer;
+  Notes: string;
+begin
+  RowsProcessed := 0;
+  Notes := '';
+  Stopwatch := TStopwatch.StartNew;
+  try
+    try
+      OpenTable(cbxPerfTables.Text, '');
+      DataSet := FDataSet;
+      DataSet.DisableControls;
+      try
+        Proc(DataSet, RowsProcessed, Notes);
+      finally
+        DataSet.EnableControls;
+      end;
+    except
+      on E: Exception do
+        Notes := 'Error: ' + E.Message;
+    end;
+  finally
+    Stopwatch.Stop;
+    AppendPerfResultRow(TestName, Stopwatch.ElapsedMilliseconds, RowsProcessed, Notes);
+  end;
+end;
+
+procedure TForm1.btnRefreshPerfTablesClick(Sender: TObject);
+begin
+  EnsurePerfConnection;
+
+  SQLFDQuery.Close;
+  SQLFDQuery.SQL.Clear;
+  SQLFDQuery.SQL.Add('select t.name from sys.tables t order by t.name');
+  SQLFDQuery.Open;
+
+  cbxPerfTables.Items.Clear;
+  while not SQLFDQuery.Eof do
+  begin
+    cbxPerfTables.Items.Add(SQLFDQuery.FieldByName('name').AsString);
+    SQLFDQuery.Next;
+  end;
+  SQLFDQuery.Close;
+end;
+
+procedure TForm1.btnClearPerfResultsClick(Sender: TObject);
+begin
+  InitPerfResultsGrid;
+end;
+
+procedure TForm1.btnRunFindKeyClick(Sender: TObject);
+begin
+  RunPerfTest('FindKey / GotoKey',
+    procedure(ADataSet: TFDDataSet; out RowsProcessed: Integer; out Notes: string)
+    var
+      KeyField: TField;
+      Sample: TArray<Variant>;
+      HitCount, i: Integer;
+    begin
+      RowsProcessed := 0;
+      Notes := '';
+
+      if ADataSet.ClassType <> TFDTable then
+      begin
+        Notes := 'Not applicable to TFDQuery';
+        Exit;
+      end;
+
+      KeyField := DetectPerfKeyField(ADataSet);
+      TFDTable(ADataSet).IndexFieldNames := KeyField.FieldName;
+
+      Sample := CollectPerfKeySample(ADataSet, KeyField, 20);
+      HitCount := 0;
+      for i := 0 to High(Sample) do
+        if TFDTable(ADataSet).FindKey([Sample[i]]) then
+          Inc(HitCount);
+
+      RowsProcessed := HitCount;
+      Notes := Format('%d/%d hit', [HitCount, Length(Sample)]);
+    end);
+end;
+
+procedure TForm1.btnRunSetRangeClick(Sender: TObject);
+begin
+  RunPerfTest('SetRange / CancelRange',
+    procedure(ADataSet: TFDDataSet; out RowsProcessed: Integer; out Notes: string)
+    var
+      KeyField: TField;
+      Sample: TArray<Variant>;
+      MinValue, MaxValue: Variant;
+    begin
+      RowsProcessed := 0;
+      Notes := '';
+
+      if ADataSet.ClassType <> TFDTable then
+      begin
+        Notes := 'Not applicable to TFDQuery';
+        Exit;
+      end;
+
+      KeyField := DetectPerfKeyField(ADataSet);
+      TFDTable(ADataSet).IndexFieldNames := KeyField.FieldName;
+
+      Sample := CollectPerfKeySample(ADataSet, KeyField, 20);
+      if Length(Sample) = 0 then
+      begin
+        Notes := 'No rows to sample';
+        Exit;
+      end;
+
+      MinValue := Sample[0];
+      MaxValue := Sample[High(Sample)];
+
+      TFDTable(ADataSet).SetRange([MinValue], [MaxValue]);
+      try
+        ADataSet.First;
+        while not ADataSet.Eof do
+        begin
+          Inc(RowsProcessed);
+          ADataSet.Next;
+        end;
+      finally
+        TFDTable(ADataSet).CancelRange;
+      end;
+
+      Notes := Format('Range [%s..%s]', [VarToStr(MinValue), VarToStr(MaxValue)]);
+    end);
+end;
+
+procedure TForm1.btnRunLocateClick(Sender: TObject);
+begin
+  RunPerfTest('Locate',
+    procedure(ADataSet: TFDDataSet; out RowsProcessed: Integer; out Notes: string)
+    var
+      KeyField: TField;
+      Sample: TArray<Variant>;
+      HitCount, i: Integer;
+    begin
+      KeyField := DetectPerfKeyField(ADataSet);
+      Sample := CollectPerfKeySample(ADataSet, KeyField, 20);
+
+      HitCount := 0;
+      for i := 0 to High(Sample) do
+        if ADataSet.Locate(KeyField.FieldName, Sample[i], []) then
+          Inc(HitCount);
+
+      RowsProcessed := HitCount;
+      Notes := Format('%d/%d hit', [HitCount, Length(Sample)]);
+    end);
+end;
+
+procedure TForm1.btnRunFullIterationClick(Sender: TObject);
+begin
+  RunPerfTest('Full Iteration',
+    procedure(ADataSet: TFDDataSet; out RowsProcessed: Integer; out Notes: string)
+    begin
+      RowsProcessed := 0;
+      Notes := '';
+      ADataSet.First;
+      while not ADataSet.Eof do
+      begin
+        Inc(RowsProcessed);
+        ADataSet.Next;
+      end;
+    end);
+end;
+
 function TForm1.GetDataSet: TFDDataSet;
 begin
-  Result := FDTable1;
+  if chkPerfUseQuery.Checked then
+    Result := SQLFDQuery
+  else
+    Result := FDTable1;
+end;
+
+procedure TForm1.chkPerfUseQueryClick(Sender: TObject);
+begin
+  if FDTable1.Active then
+    FDTable1.Close;
+  if SQLFDQuery.Active then
+    SQLFDQuery.Close;
 end;
 
 procedure TForm1.OpenTable(aTableName: string; IndexToUse: string);
 begin
-  if not FDataSet.Active
-    then
+  if FDataSet.Active then
+    FDataSet.Close;
+
+  DataSource1.DataSet := FDataSet;
+
+  if SQLFDConnection.Connected
+    then SQLFDConnection.Connected := False
+    else
       begin
-        DataSource1.DataSet := FDataSet;
-
-        if SQLFDConnection.Connected
-          then SQLFDConnection.Connected := False
-          else
-            begin
-              SetConnection;
-              SetFDConnectionOptions;
-            end;
-
-        SQLFDConnection.Params.Database := DBNameEdit.Text;
-        SQLFDConnection.Connected := True;
-
-        if FDataSet.ClassType = TFDQuery then
-        begin
-//          FDataSet.IndexDefs.Assign(FDTable1.IndexDefs);
-          TFDQuery(FDataSet).SQL.Text := 'select * from [dbo].['+aTableName+']';
-          TFDQuery(FDataSet).IndexName := IndexToUse;
-          FDataSet.Open;
-        end
-        else
-        begin
-          FDTable1.TableName := '[dbo].['+aTableName+']';
-          FDTable1.IndexName := IndexToUse;
-          FDTable1.Open;
-        end;
+        SetConnection;
+        SetFDConnectionOptions;
       end;
 
+  SQLFDConnection.Params.Database := DBNameEdit.Text;
+  SQLFDConnection.Connected := True;
+
+  if chkPerfUseQuery.Checked then
+  begin
+    SQLFDQuery.SQL.Text := 'select * from [dbo].['+aTableName+']';
+    SQLFDQuery.IndexName := IndexToUse;
+    SQLFDQuery.Open;
+  end
+  else
+  begin
+    FDTable1.TableName := '[dbo].['+aTableName+']';
+    FDTable1.IndexName := IndexToUse;
+    FDTable1.Open;
+  end;
+
+  FDataSet.First;
   AssignIndexAndFilterEdits;
 end;
 

@@ -171,11 +171,102 @@ object Form1: TForm1
     Top = 100
     Width = 783
     Height = 264
-    ActivePage = CommandTab
+    ActivePage = PerfTestsTab
     Align = alTop
     TabOrder = 2
-    object CommandTab: TTabSheet
-      Caption = 'Command'
+    object PerfTestsTab: TTabSheet
+      Caption = 'Performance Tests'
+      ImageIndex = 2
+      object lblPerfTableName: TLabel
+        Left = 16
+        Top = 16
+        Width = 60
+        Height = 13
+        Caption = 'Table Name:'
+      end
+      object cbxPerfTables: TComboBox
+        Left = 93
+        Top = 13
+        Width = 150
+        Height = 21
+        TabOrder = 0
+      end
+      object btnRefreshPerfTables: TButton
+        Left = 249
+        Top = 11
+        Width = 100
+        Height = 25
+        Caption = 'Refresh Tables'
+        TabOrder = 1
+        OnClick = btnRefreshPerfTablesClick
+      end
+      object chkPerfUseQuery: TCheckBox
+        Left = 365
+        Top = 16
+        Width = 193
+        Height = 17
+        Caption = 'Use TFDQuery (instead of TFDTable)'
+        TabOrder = 2
+        OnClick = chkPerfUseQueryClick
+      end
+      object btnRunFullIteration: TButton
+        Left = 16
+        Top = 48
+        Width = 210
+        Height = 25
+        Caption = '1. Full Iteration (First..Eof)'
+        TabOrder = 3
+        OnClick = btnRunFullIterationClick
+      end
+      object btnRunFindKey: TButton
+        Left = 232
+        Top = 48
+        Width = 150
+        Height = 25
+        Caption = '2. FindKey / GotoKey'
+        TabOrder = 4
+        OnClick = btnRunFindKeyClick
+      end
+      object btnRunSetRange: TButton
+        Left = 388
+        Top = 48
+        Width = 170
+        Height = 25
+        Caption = '3. SetRange / CancelRange'
+        TabOrder = 5
+        OnClick = btnRunSetRangeClick
+      end
+      object btnRunLocate: TButton
+        Left = 564
+        Top = 48
+        Width = 110
+        Height = 25
+        Caption = '4. Locate'
+        TabOrder = 6
+        OnClick = btnRunLocateClick
+      end
+      object btnClearPerfResults: TButton
+        Left = 680
+        Top = 48
+        Width = 90
+        Height = 25
+        Caption = 'Clear Results'
+        TabOrder = 7
+        OnClick = btnClearPerfResultsClick
+      end
+      object grdPerfResults: TStringGrid
+        Left = 16
+        Top = 80
+        Width = 754
+        Height = 150
+        ColCount = 4
+        DefaultRowHeight = 18
+        FixedCols = 0
+        RowCount = 1
+        FixedRows = 0
+        Options = [goFixedVertLine, goFixedHorzLine, goVertLine, goHorzLine, goRangeSelect, goColMoving, goFixedRowDefAlign]
+        TabOrder = 8
+      end
     end
     object ConnectionOptionsTab: TTabSheet
       Caption = 'Connection Options'
