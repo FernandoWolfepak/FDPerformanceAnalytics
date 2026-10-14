@@ -418,6 +418,7 @@ object Form1: TForm1
         FixedRows = 0
         Options = [goFixedVertLine, goFixedHorzLine, goVertLine, goHorzLine, goColMoving, goRowSelect, goFixedRowDefAlign]
         TabOrder = 9
+        OnSelectCell = grdBenchResultsSelectCell
       end
       object clbBenchProps: TCheckListBox
         Left = 780
