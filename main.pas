@@ -615,6 +615,9 @@ var
 begin
   SetFormBusy(True);
   try
+    { OpenTable only re-applies the options when the connection is down, so apply the
+      current Connection Options tabs before every manual test. }
+    SetFDConnectionOptions;
     ExecutePerfTest(cbxPerfTables.Text, Proc, ElapsedMs, RowsProcessed, Notes, ErrorMsg);
   finally
     SetFormBusy(False);

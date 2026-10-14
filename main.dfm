@@ -3,7 +3,7 @@ object Form1: TForm1
   Top = 229
   Caption = 'Form1'
   ClientHeight = 787
-  ClientWidth = 805
+  ClientWidth = 1107
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -18,20 +18,22 @@ object Form1: TForm1
   object pnlTop: TPanel
     Left = 0
     Top = 0
-    Width = 805
+    Width = 1107
     Height = 100
     Align = alTop
     TabOrder = 0
+    ExplicitWidth = 805
     object TopNoteLbl: TLabel
       Left = 1
       Top = 1
-      Width = 453
+      Width = 1105
       Height = 13
       Align = alTop
       Caption = 
         'A sample project that connects to SQL Server using FireDAC and r' +
         'uns some performance tests'
       WordWrap = True
+      ExplicitWidth = 453
     end
     object Label4: TLabel
       Left = 232
@@ -166,7 +168,7 @@ object Form1: TForm1
   object DBGrid1: TDBGrid
     Left = 0
     Top = 617
-    Width = 805
+    Width = 1107
     Height = 125
     Align = alBottom
     DataSource = DataSource1
@@ -180,11 +182,12 @@ object Form1: TForm1
   object PageControl: TPageControl
     Left = 0
     Top = 353
-    Width = 805
+    Width = 1107
     Height = 264
     ActivePage = PerfTestsTab
     Align = alClient
     TabOrder = 2
+    ExplicitWidth = 805
     object PerfTestsTab: TTabSheet
       Caption = 'Performance Tests'
       ImageIndex = 2
@@ -283,7 +286,7 @@ object Form1: TForm1
       Caption = 'Auto Benchmark'
       ImageIndex = 3
       DesignSize = (
-        797
+        1099
         236)
       object lblBenchTest: TLabel
         Left = 16
@@ -314,7 +317,7 @@ object Form1: TForm1
         AutoSize = False
       end
       object lblBenchProps: TLabel
-        Left = 780
+        Left = 786
         Top = 4
         Width = 195
         Height = 13
@@ -410,19 +413,17 @@ object Form1: TForm1
         Top = 96
         Width = 754
         Height = 134
-        Anchors = [akLeft, akTop, akRight, akBottom]
         ColCount = 7
         DefaultRowHeight = 18
         FixedCols = 0
         RowCount = 1
         FixedRows = 0
-        Options = [goFixedVertLine, goFixedHorzLine, goVertLine, goHorzLine, goColMoving, goRowSelect, goFixedRowDefAlign]
         TabOrder = 9
         OnSelectCell = grdBenchResultsSelectCell
       end
       object clbBenchProps: TCheckListBox
-        Left = 780
-        Top = 22
+        Left = 786
+        Top = 23
         Width = 260
         Height = 180
         Anchors = [akTop, akRight, akBottom]
@@ -432,8 +433,8 @@ object Form1: TForm1
       end
       object btnBenchPropsAll: TButton
         Tag = 1
-        Left = 780
-        Top = 206
+        Left = 786
+        Top = 211
         Width = 80
         Height = 22
         Anchors = [akRight, akBottom]
@@ -442,7 +443,7 @@ object Form1: TForm1
         OnClick = btnBenchPropsSelectClick
       end
       object btnBenchPropsNone: TButton
-        Left = 866
+        Left = 1168
         Top = 206
         Width = 80
         Height = 22
@@ -450,57 +451,60 @@ object Form1: TForm1
         Caption = 'Clear'
         TabOrder = 12
         OnClick = btnBenchPropsSelectClick
+        ExplicitLeft = 866
       end
     end
   end
   object pnlFooter: TPanel
     Left = 0
     Top = 742
-    Width = 805
+    Width = 1107
     Height = 45
     Align = alBottom
     Anchors = [akLeft, akTop, akBottom]
     BevelOuter = bvNone
     TabOrder = 3
+    ExplicitWidth = 805
     object lblProgress: TLabel
       AlignWithMargins = True
       Left = 3
       Top = 3
-      Width = 31
-      Height = 13
+      Width = 1101
+      Height = 19
       Align = alClient
       Caption = 'Ready'
       Layout = tlCenter
+      ExplicitWidth = 31
+      ExplicitHeight = 13
     end
     object pbProgress: TProgressBar
       Left = 0
       Top = 25
-      Width = 805
+      Width = 1107
       Height = 20
       Align = alBottom
       TabOrder = 0
+      ExplicitWidth = 805
     end
   end
   object PageControlConnection: TcxPageControl
     Left = 0
     Top = 100
-    Width = 805
+    Width = 1107
     Height = 253
     Align = alTop
     TabOrder = 4
     Properties.ActivePage = FetchOptionsTab
     Properties.CustomButtons.Buttons = <>
+    ExplicitWidth = 805
     ClientRectBottom = 249
     ClientRectLeft = 4
-    ClientRectRight = 801
+    ClientRectRight = 1103
     ClientRectTop = 24
     object FetchOptionsTab: TcxTabSheet
       Caption = 'FetchOptionsTab'
       ImageIndex = 0
-      ExplicitLeft = 0
-      ExplicitTop = 0
-      ExplicitWidth = 0
-      ExplicitHeight = 0
+      ExplicitWidth = 797
       object lblRecsSkip: TLabel
         Left = 162
         Top = 119
@@ -751,10 +755,7 @@ object Form1: TForm1
     object FormatOptionsTab: TcxTabSheet
       Caption = 'FormatOptionsTab'
       ImageIndex = 1
-      ExplicitLeft = 0
-      ExplicitTop = 0
-      ExplicitWidth = 0
-      ExplicitHeight = 0
+      ExplicitWidth = 797
       object Label14: TLabel
         Left = 15
         Top = 10
@@ -880,10 +881,6 @@ object Form1: TForm1
     object ResourceOptionsTab: TcxTabSheet
       Caption = 'ResourceOptions'
       ImageIndex = 2
-      ExplicitLeft = 0
-      ExplicitTop = 0
-      ExplicitWidth = 0
-      ExplicitHeight = 0
       object chkMacroCreate: TCheckBox
         Left = 18
         Top = 19
@@ -943,10 +940,6 @@ object Form1: TForm1
     object UpdateOptionsTab: TcxTabSheet
       Caption = 'UpdateOptions'
       ImageIndex = 3
-      ExplicitLeft = 0
-      ExplicitTop = 0
-      ExplicitWidth = 0
-      ExplicitHeight = 0
       object rgLockMode: TRadioGroup
         Left = 27
         Top = 18
