@@ -1,36 +1,37 @@
 object Form1: TForm1
   Left = 0
-  Top = 0
+  Top = 229
   Caption = 'Form1'
-  ClientHeight = 506
-  ClientWidth = 783
+  ClientHeight = 787
+  ClientWidth = 805
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
   Font.Height = -11
   Font.Name = 'Tahoma'
   Font.Style = []
+  Position = poDesigned
+  WindowState = wsMaximized
   OnCloseQuery = FormCloseQuery
   OnShow = FormShow
   TextHeight = 13
-  object Panel2: TPanel
+  object pnlTop: TPanel
     Left = 0
     Top = 0
-    Width = 783
+    Width = 805
     Height = 100
     Align = alTop
     TabOrder = 0
     object TopNoteLbl: TLabel
       Left = 1
       Top = 1
-      Width = 781
+      Width = 453
       Height = 13
       Align = alTop
       Caption = 
         'A sample project that connects to SQL Server using FireDAC and r' +
         'uns some performance tests'
       WordWrap = True
-      ExplicitWidth = 453
     end
     object Label4: TLabel
       Left = 232
@@ -164,10 +165,10 @@ object Form1: TForm1
   end
   object DBGrid1: TDBGrid
     Left = 0
-    Top = 364
-    Width = 783
-    Height = 101
-    Align = alClient
+    Top = 617
+    Width = 805
+    Height = 125
+    Align = alBottom
     DataSource = DataSource1
     TabOrder = 1
     TitleFont.Charset = DEFAULT_CHARSET
@@ -178,11 +179,11 @@ object Form1: TForm1
   end
   object PageControl: TPageControl
     Left = 0
-    Top = 100
-    Width = 783
+    Top = 353
+    Width = 805
     Height = 264
-    ActivePage = AutoBenchmarkTab
-    Align = alTop
+    ActivePage = PerfTestsTab
+    Align = alClient
     TabOrder = 2
     object PerfTestsTab: TTabSheet
       Caption = 'Performance Tests'
@@ -281,6 +282,9 @@ object Form1: TForm1
     object AutoBenchmarkTab: TTabSheet
       Caption = 'Auto Benchmark'
       ImageIndex = 3
+      DesignSize = (
+        797
+        236)
       object lblBenchTest: TLabel
         Left = 16
         Top = 16
@@ -308,6 +312,14 @@ object Form1: TForm1
         Width = 730
         Height = 13
         AutoSize = False
+      end
+      object lblBenchProps: TLabel
+        Left = 780
+        Top = 4
+        Width = 195
+        Height = 13
+        Anchors = [akTop, akRight]
+        Caption = 'Properties to benchmark (one at a time):'
       end
       object cbxBenchTest: TComboBox
         Left = 52
@@ -355,6 +367,7 @@ object Form1: TForm1
         MinValue = 1
         TabOrder = 4
         Value = 5
+        OnChange = seBenchRepsChange
       end
       object btnBenchRun: TButton
         Left = 145
@@ -397,549 +410,53 @@ object Form1: TForm1
         Top = 96
         Width = 754
         Height = 134
+        Anchors = [akLeft, akTop, akRight, akBottom]
         ColCount = 7
         DefaultRowHeight = 18
         FixedCols = 0
         RowCount = 1
         FixedRows = 0
-        Options = [goFixedVertLine, goFixedHorzLine, goVertLine, goHorzLine, goRangeSelect, goColMoving, goFixedRowDefAlign]
+        Options = [goFixedVertLine, goFixedHorzLine, goVertLine, goHorzLine, goColMoving, goRowSelect, goFixedRowDefAlign]
         TabOrder = 9
       end
-    end
-    object ConnectionOptionsTab: TTabSheet
-      Caption = 'Connection Options'
-      ImageIndex = 1
-      object PageControlConnection: TcxPageControl
-        Left = 0
-        Top = 0
-        Width = 775
-        Height = 236
-        Align = alClient
-        TabOrder = 0
-        Properties.ActivePage = UpdateOptionsTab
-        Properties.CustomButtons.Buttons = <>
-        ClientRectBottom = 232
-        ClientRectLeft = 4
-        ClientRectRight = 771
-        ClientRectTop = 24
-        object FetchOptionsTab: TcxTabSheet
-          Caption = 'FetchOptionsTab'
-          ImageIndex = 0
-          object lblRecsSkip: TLabel
-            Left = 162
-            Top = 119
-            Width = 42
-            Height = 13
-            Caption = 'RecsSkip'
-          end
-          object lblRecsMax: TLabel
-            Left = 234
-            Top = 119
-            Width = 43
-            Height = 13
-            Caption = 'RecsMax'
-          end
-          object lblRowsetSize: TLabel
-            Left = 300
-            Top = 119
-            Width = 55
-            Height = 13
-            Caption = 'RowsetSize'
-          end
-          object Label13: TLabel
-            Left = 592
-            Top = 2
-            Width = 49
-            Height = 13
-            Caption = 'FetchItem'
-          end
-          object lblCache: TLabel
-            Left = 592
-            Top = 83
-            Width = 30
-            Height = 13
-            Caption = 'Cache'
-          end
-          object lblDetailDelay: TLabel
-            Left = 367
-            Top = 119
-            Width = 54
-            Height = 13
-            Caption = 'DetailDelay'
-          end
-          object rgCursorKind: TRadioGroup
-            Left = 6
-            Top = 10
-            Width = 131
-            Height = 105
-            Caption = 'CursorKind'
-            ItemIndex = 0
-            Items.Strings = (
-              'ckAutomatic'
-              'ckDefault'
-              'ckDynamic'
-              'ckStatic'
-              'ckForwardOnly')
-            TabOrder = 0
-          end
-          object rgFetchMode: TRadioGroup
-            Left = 143
-            Top = 10
-            Width = 125
-            Height = 105
-            Caption = 'Mode'
-            ItemIndex = 1
-            Items.Strings = (
-              'fmManual'
-              'fmOnDemand'
-              'fmAll'
-              'fmExactRecsMax')
-            TabOrder = 1
-          end
-          object chkLiveWindowParanoic: TCheckBox
-            Left = 274
-            Top = 10
-            Width = 143
-            Height = 17
-            Caption = 'LiveWindowParanoic'
-            Checked = True
-            State = cbChecked
-            TabOrder = 2
-          end
-          object chkLiveWindowFastFirst: TCheckBox
-            Left = 274
-            Top = 33
-            Width = 143
-            Height = 17
-            Caption = 'LiveWindowFastFirst'
-            TabOrder = 3
-          end
-          object rgAutoFetchAll: TRadioGroup
-            Left = 6
-            Top = 121
-            Width = 141
-            Height = 70
-            Caption = 'AutoFetchAll'
-            ItemIndex = 0
-            Items.Strings = (
-              'afAll'
-              'afTruncate'
-              'afDisable')
-            TabOrder = 4
-          end
-          object edRecsSkip: TEdit
-            Left = 160
-            Top = 137
-            Width = 53
-            Height = 21
-            NumbersOnly = True
-            TabOrder = 5
-            Text = '-1'
-          end
-          object edRecsMax: TEdit
-            Left = 232
-            Top = 137
-            Width = 53
-            Height = 21
-            NumbersOnly = True
-            TabOrder = 6
-            Text = '-1'
-          end
-          object edRowsetSize: TEdit
-            Left = 300
-            Top = 137
-            Width = 53
-            Height = 21
-            NumbersOnly = True
-            TabOrder = 7
-            Text = '-1'
-          end
-          object ckFetchItem: TcxCheckListBox
-            Left = 591
-            Top = 18
-            Width = 141
-            Height = 59
-            Items = <
-              item
-                State = cbsChecked
-                Text = 'fiBlobs'
-              end
-              item
-                State = cbsChecked
-                Text = 'fiDetails'
-              end
-              item
-                State = cbsChecked
-                Text = 'fiMeta'
-              end>
-            TabOrder = 8
-          end
-          object ckCache: TcxCheckListBox
-            Left = 591
-            Top = 99
-            Width = 141
-            Height = 59
-            Items = <
-              item
-                State = cbsChecked
-                Text = 'fiBlobs'
-              end
-              item
-                State = cbsChecked
-                Text = 'fiDetails'
-              end
-              item
-                State = cbsChecked
-                Text = 'fiMeta'
-              end>
-            TabOrder = 9
-          end
-          object chkAutoClose: TCheckBox
-            Left = 274
-            Top = 57
-            Width = 143
-            Height = 17
-            Caption = 'AutoClose'
-            TabOrder = 10
-          end
-          object rgRecordCountMode: TRadioGroup
-            Left = 423
-            Top = 79
-            Width = 123
-            Height = 79
-            Caption = 'RecordCountMode'
-            ItemIndex = 0
-            Items.Strings = (
-              'cmVisible'
-              'cmFetched'
-              'cmTotal')
-            TabOrder = 11
-          end
-          object chkUnidirectional: TCheckBox
-            Left = 274
-            Top = 80
-            Width = 143
-            Height = 17
-            Caption = 'Unidirectional'
-            TabOrder = 12
-          end
-          object edDetailDelay: TEdit
-            Left = 367
-            Top = 137
-            Width = 53
-            Height = 21
-            NumbersOnly = True
-            TabOrder = 13
-            Text = '-1'
-          end
-          object chkDetailOptimize: TCheckBox
-            Left = 423
-            Top = 10
-            Width = 138
-            Height = 17
-            Caption = 'DetailOptimize'
-            Checked = True
-            State = cbChecked
-            TabOrder = 14
-          end
-          object chkDetailCascade: TCheckBox
-            Left = 423
-            Top = 33
-            Width = 138
-            Height = 17
-            Caption = 'DetailCascade'
-            Checked = True
-            State = cbChecked
-            TabOrder = 15
-          end
-          object chkDetailServerCascade: TCheckBox
-            Left = 423
-            Top = 56
-            Width = 138
-            Height = 17
-            Caption = 'DetailServerCascade'
-            Checked = True
-            State = cbChecked
-            TabOrder = 16
-          end
-          object btnFetchOptionsRestoreDefaults: TButton
-            Left = 562
-            Top = 162
-            Width = 170
-            Height = 43
-            Caption = 'Restore Defaults'
-            TabOrder = 17
-            OnClick = btnFetchOptionsRestoreDefaultsClick
-          end
-        end
-        object FormatOptionsTab: TcxTabSheet
-          Caption = 'FormatOptionsTab'
-          ImageIndex = 1
-          object Label14: TLabel
-            Left = 15
-            Top = 10
-            Width = 57
-            Height = 13
-            Caption = 'SortOptions'
-          end
-          object ckSortOptions: TcxCheckListBox
-            Left = 14
-            Top = 29
-            Width = 141
-            Height = 140
-            Items = <
-              item
-                Text = 'soNoCase'
-              end
-              item
-                Text = 'soNullFirst'
-              end
-              item
-                Text = 'soDescNullLast'
-              end
-              item
-                Text = 'soDescending'
-              end
-              item
-                Text = 'soUnique'
-              end
-              item
-                Text = 'soPrimary'
-              end
-              item
-                Text = 'soNoSymbols'
-              end
-              item
-                Text = 'soDigitsAsNumbers'
-              end>
-            TabOrder = 0
-          end
-          object rgSortLocate: TRadioGroup
-            Left = 177
-            Top = 10
-            Width = 224
-            Height = 159
-            Caption = 'SortLocate'
-            ItemIndex = 1
-            Items.Strings = (
-              'LOCALE_SYSTEM_DEFAULT'
-              'LOCALE_USER_DEFAULT'
-              'LOCALE_CUSTOM_DEFAULT'
-              'LOCALE_CUSTOM_UNSPECIFIED'
-              'LOCALE_CUSTOM_UI_DEFAULT'
-              'LOCALE_NEUTRAL'
-              'LOCALE_INVARIANT')
-            TabOrder = 1
-          end
-          object chkStrsTrim: TCheckBox
-            Left = 418
-            Top = 11
-            Width = 87
-            Height = 17
-            Caption = 'StrsTrim'
-            TabOrder = 2
-          end
-          object chkStrsEmpty2Null: TCheckBox
-            Left = 418
-            Top = 34
-            Width = 119
-            Height = 17
-            Caption = 'StrsEmpty2Null'
-            TabOrder = 3
-          end
-          object chkStrsTrim2Len: TCheckBox
-            Left = 418
-            Top = 57
-            Width = 103
-            Height = 17
-            Caption = 'StrsTrim2Len'
-            TabOrder = 4
-          end
-          object chkCheckPrecision: TCheckBox
-            Left = 418
-            Top = 80
-            Width = 103
-            Height = 17
-            Caption = 'CheckPrecision'
-            TabOrder = 5
-          end
-          object chkADOCompatibility: TCheckBox
-            Left = 418
-            Top = 126
-            Width = 143
-            Height = 17
-            Caption = 'ADOCompatibility'
-            TabOrder = 6
-          end
-          object chkDataSnapCompatibility: TCheckBox
-            Left = 418
-            Top = 103
-            Width = 167
-            Height = 17
-            Caption = 'DataSnapCompatibility'
-            TabOrder = 7
-          end
-          object chkQuoteIdentifiers: TCheckBox
-            Left = 418
-            Top = 149
-            Width = 143
-            Height = 17
-            Caption = 'QuoteIdentifiers'
-            TabOrder = 8
-          end
-          object btnFormatOptionsRestoreDefaults: TButton
-            Left = 571
-            Top = 21
-            Width = 170
-            Height = 43
-            Caption = 'Restore Defaults'
-            TabOrder = 9
-            OnClick = btnFormatOptionsRestoreDefaultsClick
-          end
-        end
-        object ResourceOptionsTab: TcxTabSheet
-          Caption = 'ResourceOptions'
-          ImageIndex = 2
-          object chkMacroCreate: TCheckBox
-            Left = 18
-            Top = 19
-            Width = 111
-            Height = 17
-            Caption = 'MacroCreate'
-            Checked = True
-            State = cbChecked
-            TabOrder = 0
-          end
-          object chkMacroExpand: TCheckBox
-            Left = 18
-            Top = 42
-            Width = 111
-            Height = 17
-            Caption = 'MacroExpand'
-            Checked = True
-            State = cbChecked
-            TabOrder = 1
-          end
-          object chkDirectExecute: TCheckBox
-            Left = 18
-            Top = 65
-            Width = 111
-            Height = 17
-            Caption = 'DirectExecute'
-            Checked = True
-            State = cbChecked
-            TabOrder = 2
-          end
-          object chkServerOutput: TCheckBox
-            Left = 146
-            Top = 19
-            Width = 111
-            Height = 17
-            Caption = 'ServerOutput'
-            TabOrder = 3
-          end
-          object btnResourceOptionsRestoreDefaults: TButton
-            Left = 263
-            Top = 29
-            Width = 170
-            Height = 43
-            Caption = 'Restore Defaults'
-            TabOrder = 4
-            OnClick = btnResourceOptionsRestoreDefaultsClick
-          end
-          object chkSilentMode: TCheckBox
-            Left = 146
-            Top = 42
-            Width = 111
-            Height = 17
-            Caption = 'SilentMode'
-            TabOrder = 5
-          end
-        end
-        object UpdateOptionsTab: TcxTabSheet
-          Caption = 'UpdateOptions'
-          ImageIndex = 3
-          object rgLockMode: TRadioGroup
-            Left = 27
-            Top = 18
-            Width = 182
-            Height = 87
-            Caption = 'LockMode'
-            Items.Strings = (
-              'lmNone'
-              'lmPessimistic'
-              'lmOptimistic')
-            TabOrder = 0
-          end
-          object rgLockPoint: TRadioGroup
-            Left = 215
-            Top = 18
-            Width = 182
-            Height = 87
-            Caption = 'LockPoint'
-            Items.Strings = (
-              'lpImmediate'
-              'lpDeferred')
-            TabOrder = 1
-          end
-          object rgUpdateMode: TRadioGroup
-            Left = 415
-            Top = 18
-            Width = 182
-            Height = 87
-            Caption = 'UpdateMode'
-            Items.Strings = (
-              'upWhereAll'
-              'upWhereChanged'
-              'upWhereKeyOnly')
-            TabOrder = 2
-          end
-          object chkLockWait: TCheckBox
-            Left = 215
-            Top = 122
-            Width = 87
-            Height = 17
-            Caption = 'LockWait'
-            TabOrder = 3
-          end
-          object chkAutoCommitUpdates: TCheckBox
-            Left = 215
-            Top = 145
-            Width = 150
-            Height = 17
-            Caption = 'AutoCommitUpdates'
-            TabOrder = 4
-          end
-          object btnUpdateOptionsRestoreDefaults: TButton
-            Left = 417
-            Top = 110
-            Width = 170
-            Height = 43
-            Caption = 'Restore Defaults'
-            TabOrder = 5
-            OnClick = btnUpdateOptionsRestoreDefaultsClick
-          end
-          object rgFetchGeneratorsPoint: TRadioGroup
-            Left = 27
-            Top = 115
-            Width = 182
-            Height = 85
-            Caption = 'FetchGeneratorsPoint'
-            Items.Strings = (
-              'gpNone'
-              'gpImmediate'
-              'gpDeferred')
-            TabOrder = 6
-          end
-        end
+      object clbBenchProps: TCheckListBox
+        Left = 780
+        Top = 22
+        Width = 260
+        Height = 180
+        Anchors = [akTop, akRight, akBottom]
+        ItemHeight = 13
+        TabOrder = 10
+        OnClickCheck = clbBenchPropsClickCheck
+      end
+      object btnBenchPropsAll: TButton
+        Tag = 1
+        Left = 780
+        Top = 206
+        Width = 80
+        Height = 22
+        Anchors = [akRight, akBottom]
+        Caption = 'Select all'
+        TabOrder = 11
+        OnClick = btnBenchPropsSelectClick
+      end
+      object btnBenchPropsNone: TButton
+        Left = 866
+        Top = 206
+        Width = 80
+        Height = 22
+        Anchors = [akRight, akBottom]
+        Caption = 'Clear'
+        TabOrder = 12
+        OnClick = btnBenchPropsSelectClick
       end
     end
   end
   object pnlFooter: TPanel
     Left = 0
-    Top = 465
-    Width = 783
-    Height = 41
+    Top = 742
+    Width = 805
+    Height = 45
     Align = alBottom
     Anchors = [akLeft, akTop, akBottom]
     BevelOuter = bvNone
@@ -948,21 +465,559 @@ object Form1: TForm1
       AlignWithMargins = True
       Left = 3
       Top = 3
-      Width = 777
-      Height = 15
+      Width = 31
+      Height = 13
       Align = alClient
       Caption = 'Ready'
       Layout = tlCenter
-      ExplicitWidth = 31
-      ExplicitHeight = 13
     end
     object pbProgress: TProgressBar
       Left = 0
-      Top = 21
-      Width = 783
+      Top = 25
+      Width = 805
       Height = 20
       Align = alBottom
       TabOrder = 0
+    end
+  end
+  object PageControlConnection: TcxPageControl
+    Left = 0
+    Top = 100
+    Width = 805
+    Height = 253
+    Align = alTop
+    TabOrder = 4
+    Properties.ActivePage = FetchOptionsTab
+    Properties.CustomButtons.Buttons = <>
+    ClientRectBottom = 249
+    ClientRectLeft = 4
+    ClientRectRight = 801
+    ClientRectTop = 24
+    object FetchOptionsTab: TcxTabSheet
+      Caption = 'FetchOptionsTab'
+      ImageIndex = 0
+      ExplicitLeft = 0
+      ExplicitTop = 0
+      ExplicitWidth = 0
+      ExplicitHeight = 0
+      object lblRecsSkip: TLabel
+        Left = 162
+        Top = 119
+        Width = 42
+        Height = 13
+        Caption = 'RecsSkip'
+      end
+      object lblRecsMax: TLabel
+        Left = 234
+        Top = 119
+        Width = 43
+        Height = 13
+        Caption = 'RecsMax'
+      end
+      object lblRowsetSize: TLabel
+        Left = 300
+        Top = 119
+        Width = 55
+        Height = 13
+        Caption = 'RowsetSize'
+      end
+      object Label13: TLabel
+        Left = 592
+        Top = 2
+        Width = 49
+        Height = 13
+        Caption = 'FetchItem'
+      end
+      object lblCache: TLabel
+        Left = 592
+        Top = 83
+        Width = 30
+        Height = 13
+        Caption = 'Cache'
+      end
+      object lblDetailDelay: TLabel
+        Left = 367
+        Top = 119
+        Width = 54
+        Height = 13
+        Caption = 'DetailDelay'
+      end
+      object rgCursorKind: TRadioGroup
+        Left = 6
+        Top = 10
+        Width = 131
+        Height = 105
+        Caption = 'CursorKind'
+        ItemIndex = 0
+        Items.Strings = (
+          'ckAutomatic'
+          'ckDefault'
+          'ckDynamic'
+          'ckStatic'
+          'ckForwardOnly')
+        TabOrder = 0
+      end
+      object rgFetchMode: TRadioGroup
+        Left = 143
+        Top = 10
+        Width = 125
+        Height = 105
+        Caption = 'Mode'
+        ItemIndex = 1
+        Items.Strings = (
+          'fmManual'
+          'fmOnDemand'
+          'fmAll'
+          'fmExactRecsMax')
+        TabOrder = 1
+      end
+      object chkLiveWindowParanoic: TCheckBox
+        Left = 274
+        Top = 10
+        Width = 143
+        Height = 17
+        Caption = 'LiveWindowParanoic'
+        Checked = True
+        State = cbChecked
+        TabOrder = 2
+      end
+      object chkLiveWindowFastFirst: TCheckBox
+        Left = 274
+        Top = 33
+        Width = 143
+        Height = 17
+        Caption = 'LiveWindowFastFirst'
+        TabOrder = 3
+      end
+      object rgAutoFetchAll: TRadioGroup
+        Left = 6
+        Top = 121
+        Width = 141
+        Height = 70
+        Caption = 'AutoFetchAll'
+        ItemIndex = 0
+        Items.Strings = (
+          'afAll'
+          'afTruncate'
+          'afDisable')
+        TabOrder = 4
+      end
+      object edRecsSkip: TEdit
+        Left = 160
+        Top = 137
+        Width = 53
+        Height = 21
+        NumbersOnly = True
+        TabOrder = 5
+        Text = '-1'
+      end
+      object edRecsMax: TEdit
+        Left = 232
+        Top = 137
+        Width = 53
+        Height = 21
+        NumbersOnly = True
+        TabOrder = 6
+        Text = '-1'
+      end
+      object edRowsetSize: TEdit
+        Left = 300
+        Top = 137
+        Width = 53
+        Height = 21
+        NumbersOnly = True
+        TabOrder = 7
+        Text = '-1'
+      end
+      object ckFetchItem: TcxCheckListBox
+        Left = 591
+        Top = 18
+        Width = 141
+        Height = 59
+        Items = <
+          item
+            State = cbsChecked
+            Text = 'fiBlobs'
+          end
+          item
+            State = cbsChecked
+            Text = 'fiDetails'
+          end
+          item
+            State = cbsChecked
+            Text = 'fiMeta'
+          end>
+        TabOrder = 8
+      end
+      object ckCache: TcxCheckListBox
+        Left = 591
+        Top = 99
+        Width = 141
+        Height = 59
+        Items = <
+          item
+            State = cbsChecked
+            Text = 'fiBlobs'
+          end
+          item
+            State = cbsChecked
+            Text = 'fiDetails'
+          end
+          item
+            State = cbsChecked
+            Text = 'fiMeta'
+          end>
+        TabOrder = 9
+      end
+      object chkAutoClose: TCheckBox
+        Left = 274
+        Top = 57
+        Width = 143
+        Height = 17
+        Caption = 'AutoClose'
+        TabOrder = 10
+      end
+      object rgRecordCountMode: TRadioGroup
+        Left = 423
+        Top = 79
+        Width = 123
+        Height = 79
+        Caption = 'RecordCountMode'
+        ItemIndex = 0
+        Items.Strings = (
+          'cmVisible'
+          'cmFetched'
+          'cmTotal')
+        TabOrder = 11
+      end
+      object chkUnidirectional: TCheckBox
+        Left = 274
+        Top = 80
+        Width = 143
+        Height = 17
+        Caption = 'Unidirectional'
+        TabOrder = 12
+      end
+      object edDetailDelay: TEdit
+        Left = 367
+        Top = 137
+        Width = 53
+        Height = 21
+        NumbersOnly = True
+        TabOrder = 13
+        Text = '-1'
+      end
+      object chkDetailOptimize: TCheckBox
+        Left = 423
+        Top = 10
+        Width = 138
+        Height = 17
+        Caption = 'DetailOptimize'
+        Checked = True
+        State = cbChecked
+        TabOrder = 14
+      end
+      object chkDetailCascade: TCheckBox
+        Left = 423
+        Top = 33
+        Width = 138
+        Height = 17
+        Caption = 'DetailCascade'
+        Checked = True
+        State = cbChecked
+        TabOrder = 15
+      end
+      object chkDetailServerCascade: TCheckBox
+        Left = 423
+        Top = 56
+        Width = 138
+        Height = 17
+        Caption = 'DetailServerCascade'
+        Checked = True
+        State = cbChecked
+        TabOrder = 16
+      end
+      object btnFetchOptionsRestoreDefaults: TButton
+        Left = 562
+        Top = 162
+        Width = 170
+        Height = 43
+        Caption = 'Restore Defaults'
+        TabOrder = 17
+        OnClick = btnFetchOptionsRestoreDefaultsClick
+      end
+    end
+    object FormatOptionsTab: TcxTabSheet
+      Caption = 'FormatOptionsTab'
+      ImageIndex = 1
+      ExplicitLeft = 0
+      ExplicitTop = 0
+      ExplicitWidth = 0
+      ExplicitHeight = 0
+      object Label14: TLabel
+        Left = 15
+        Top = 10
+        Width = 57
+        Height = 13
+        Caption = 'SortOptions'
+      end
+      object ckSortOptions: TcxCheckListBox
+        Left = 14
+        Top = 29
+        Width = 141
+        Height = 140
+        Items = <
+          item
+            Text = 'soNoCase'
+          end
+          item
+            Text = 'soNullFirst'
+          end
+          item
+            Text = 'soDescNullLast'
+          end
+          item
+            Text = 'soDescending'
+          end
+          item
+            Text = 'soUnique'
+          end
+          item
+            Text = 'soPrimary'
+          end
+          item
+            Text = 'soNoSymbols'
+          end
+          item
+            Text = 'soDigitsAsNumbers'
+          end>
+        TabOrder = 0
+      end
+      object rgSortLocate: TRadioGroup
+        Left = 177
+        Top = 10
+        Width = 224
+        Height = 159
+        Caption = 'SortLocate'
+        ItemIndex = 1
+        Items.Strings = (
+          'LOCALE_SYSTEM_DEFAULT'
+          'LOCALE_USER_DEFAULT'
+          'LOCALE_CUSTOM_DEFAULT'
+          'LOCALE_CUSTOM_UNSPECIFIED'
+          'LOCALE_CUSTOM_UI_DEFAULT'
+          'LOCALE_NEUTRAL'
+          'LOCALE_INVARIANT')
+        TabOrder = 1
+      end
+      object chkStrsTrim: TCheckBox
+        Left = 418
+        Top = 11
+        Width = 87
+        Height = 17
+        Caption = 'StrsTrim'
+        TabOrder = 2
+      end
+      object chkStrsEmpty2Null: TCheckBox
+        Left = 418
+        Top = 34
+        Width = 119
+        Height = 17
+        Caption = 'StrsEmpty2Null'
+        TabOrder = 3
+      end
+      object chkStrsTrim2Len: TCheckBox
+        Left = 418
+        Top = 57
+        Width = 103
+        Height = 17
+        Caption = 'StrsTrim2Len'
+        TabOrder = 4
+      end
+      object chkCheckPrecision: TCheckBox
+        Left = 418
+        Top = 80
+        Width = 103
+        Height = 17
+        Caption = 'CheckPrecision'
+        TabOrder = 5
+      end
+      object chkADOCompatibility: TCheckBox
+        Left = 418
+        Top = 126
+        Width = 143
+        Height = 17
+        Caption = 'ADOCompatibility'
+        TabOrder = 6
+      end
+      object chkDataSnapCompatibility: TCheckBox
+        Left = 418
+        Top = 103
+        Width = 167
+        Height = 17
+        Caption = 'DataSnapCompatibility'
+        TabOrder = 7
+      end
+      object chkQuoteIdentifiers: TCheckBox
+        Left = 418
+        Top = 149
+        Width = 143
+        Height = 17
+        Caption = 'QuoteIdentifiers'
+        TabOrder = 8
+      end
+      object btnFormatOptionsRestoreDefaults: TButton
+        Left = 571
+        Top = 21
+        Width = 170
+        Height = 43
+        Caption = 'Restore Defaults'
+        TabOrder = 9
+        OnClick = btnFormatOptionsRestoreDefaultsClick
+      end
+    end
+    object ResourceOptionsTab: TcxTabSheet
+      Caption = 'ResourceOptions'
+      ImageIndex = 2
+      ExplicitLeft = 0
+      ExplicitTop = 0
+      ExplicitWidth = 0
+      ExplicitHeight = 0
+      object chkMacroCreate: TCheckBox
+        Left = 18
+        Top = 19
+        Width = 111
+        Height = 17
+        Caption = 'MacroCreate'
+        Checked = True
+        State = cbChecked
+        TabOrder = 0
+      end
+      object chkMacroExpand: TCheckBox
+        Left = 18
+        Top = 42
+        Width = 111
+        Height = 17
+        Caption = 'MacroExpand'
+        Checked = True
+        State = cbChecked
+        TabOrder = 1
+      end
+      object chkDirectExecute: TCheckBox
+        Left = 18
+        Top = 65
+        Width = 111
+        Height = 17
+        Caption = 'DirectExecute'
+        Checked = True
+        State = cbChecked
+        TabOrder = 2
+      end
+      object chkServerOutput: TCheckBox
+        Left = 146
+        Top = 19
+        Width = 111
+        Height = 17
+        Caption = 'ServerOutput'
+        TabOrder = 3
+      end
+      object btnResourceOptionsRestoreDefaults: TButton
+        Left = 263
+        Top = 29
+        Width = 170
+        Height = 43
+        Caption = 'Restore Defaults'
+        TabOrder = 4
+        OnClick = btnResourceOptionsRestoreDefaultsClick
+      end
+      object chkSilentMode: TCheckBox
+        Left = 146
+        Top = 42
+        Width = 111
+        Height = 17
+        Caption = 'SilentMode'
+        TabOrder = 5
+      end
+    end
+    object UpdateOptionsTab: TcxTabSheet
+      Caption = 'UpdateOptions'
+      ImageIndex = 3
+      ExplicitLeft = 0
+      ExplicitTop = 0
+      ExplicitWidth = 0
+      ExplicitHeight = 0
+      object rgLockMode: TRadioGroup
+        Left = 27
+        Top = 18
+        Width = 182
+        Height = 87
+        Caption = 'LockMode'
+        Items.Strings = (
+          'lmNone'
+          'lmPessimistic'
+          'lmOptimistic')
+        TabOrder = 0
+      end
+      object rgLockPoint: TRadioGroup
+        Left = 215
+        Top = 18
+        Width = 182
+        Height = 87
+        Caption = 'LockPoint'
+        Items.Strings = (
+          'lpImmediate'
+          'lpDeferred')
+        TabOrder = 1
+      end
+      object rgUpdateMode: TRadioGroup
+        Left = 415
+        Top = 18
+        Width = 182
+        Height = 87
+        Caption = 'UpdateMode'
+        Items.Strings = (
+          'upWhereAll'
+          'upWhereChanged'
+          'upWhereKeyOnly')
+        TabOrder = 2
+      end
+      object chkLockWait: TCheckBox
+        Left = 215
+        Top = 122
+        Width = 87
+        Height = 17
+        Caption = 'LockWait'
+        TabOrder = 3
+      end
+      object chkAutoCommitUpdates: TCheckBox
+        Left = 215
+        Top = 145
+        Width = 150
+        Height = 17
+        Caption = 'AutoCommitUpdates'
+        TabOrder = 4
+      end
+      object btnUpdateOptionsRestoreDefaults: TButton
+        Left = 417
+        Top = 110
+        Width = 170
+        Height = 43
+        Caption = 'Restore Defaults'
+        TabOrder = 5
+        OnClick = btnUpdateOptionsRestoreDefaultsClick
+      end
+      object rgFetchGeneratorsPoint: TRadioGroup
+        Left = 27
+        Top = 115
+        Width = 182
+        Height = 85
+        Caption = 'FetchGeneratorsPoint'
+        Items.Strings = (
+          'gpNone'
+          'gpImmediate'
+          'gpDeferred')
+        TabOrder = 6
+      end
     end
   end
   object ConnectionCheckTimer: TTimer

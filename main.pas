@@ -31,6 +31,8 @@ type
   { One benchmarked FireDAC property and the values to try. CurrentCaption is the
     value held by the Connection Options tab (the "original" configuration). }
   TBenchDimension = record
+    Name: string;           { shown in the property checklist }
+    Cross: Boolean;         { True: crossed with the other Cross dimensions; False: varied one at a time }
     CurrentCaption: string;
     Options: TArray<TBenchOption>;
   end;
@@ -56,7 +58,7 @@ type
 
 type
   TForm1 = class(TForm)
-    Panel2: TPanel;
+    pnlTop: TPanel;
     TopNoteLbl: TLabel;
     Label4: TLabel;
     Label19: TLabel;
@@ -78,7 +80,42 @@ type
     CurrentFilterLbl: TLabel;
     CurrentRecordCountLbl: TLabel;
     PageControl: TPageControl;
-    ConnectionOptionsTab: TTabSheet;
+    btnConnect: TButton;
+    ConnectionAliveCB: TCheckBox;
+    ConnectionCheckTimer: TTimer;
+    PerfTestsTab: TTabSheet;
+    lblPerfTableName: TLabel;
+    cbxPerfTables: TComboBox;
+    btnRefreshPerfTables: TButton;
+    chkPerfUseQuery: TCheckBox;
+    btnRunFullIteration: TButton;
+    btnRunFindKey: TButton;
+    btnRunSetRange: TButton;
+    btnRunLocate: TButton;
+    btnClearPerfResults: TButton;
+    grdPerfResults: TStringGrid;
+    AutoBenchmarkTab: TTabSheet;
+    lblBenchTest: TLabel;
+    cbxBenchTest: TComboBox;
+    lblBenchTable: TLabel;
+    cbxBenchTables: TComboBox;
+    btnBenchRefreshTables: TButton;
+    rgBenchDataSet: TRadioGroup;
+    lblBenchReps: TLabel;
+    seBenchReps: TSpinEdit;
+    btnBenchRun: TButton;
+    btnBenchCancel: TButton;
+    btnBenchExport: TButton;
+    pbBench: TProgressBar;
+    lblBenchStatus: TLabel;
+    grdBenchResults: TStringGrid;
+    lblBenchProps: TLabel;
+    clbBenchProps: TCheckListBox;
+    btnBenchPropsAll: TButton;
+    btnBenchPropsNone: TButton;
+    pbProgress: TProgressBar;
+    pnlFooter: TPanel;
+    lblProgress: TLabel;
     PageControlConnection: TcxPageControl;
     FetchOptionsTab: TcxTabSheet;
     lblRecsSkip: TLabel;
@@ -132,37 +169,6 @@ type
     chkAutoCommitUpdates: TCheckBox;
     btnUpdateOptionsRestoreDefaults: TButton;
     rgFetchGeneratorsPoint: TRadioGroup;
-    btnConnect: TButton;
-    ConnectionAliveCB: TCheckBox;
-    ConnectionCheckTimer: TTimer;
-    PerfTestsTab: TTabSheet;
-    lblPerfTableName: TLabel;
-    cbxPerfTables: TComboBox;
-    btnRefreshPerfTables: TButton;
-    chkPerfUseQuery: TCheckBox;
-    btnRunFullIteration: TButton;
-    btnRunFindKey: TButton;
-    btnRunSetRange: TButton;
-    btnRunLocate: TButton;
-    btnClearPerfResults: TButton;
-    grdPerfResults: TStringGrid;
-    lblBenchTest: TLabel;
-    cbxBenchTest: TComboBox;
-    lblBenchTable: TLabel;
-    cbxBenchTables: TComboBox;
-    btnBenchRefreshTables: TButton;
-    rgBenchDataSet: TRadioGroup;
-    lblBenchReps: TLabel;
-    seBenchReps: TSpinEdit;
-    btnBenchRun: TButton;
-    btnBenchCancel: TButton;
-    btnBenchExport: TButton;
-    pbBench: TProgressBar;
-    lblBenchStatus: TLabel;
-    grdBenchResults: TStringGrid;
-    pbProgress: TProgressBar;
-    pnlFooter: TPanel;
-    lblProgress: TLabel;
     procedure UseOSAuthenticationCBClick(Sender: TObject);
     procedure UseAzureADInteractiveCBClick(Sender: TObject);
     procedure UseAzureADIntegratedCBClick(Sender: TObject);
@@ -186,6 +192,10 @@ type
     procedure btnBenchRunClick(Sender: TObject);
     procedure btnBenchCancelClick(Sender: TObject);
     procedure btnBenchExportClick(Sender: TObject);
+    procedure btnBenchPropsSelectClick(Sender: TObject);
+    procedure grdBenchResultsSelectCell(Sender: TObject; ACol, ARow: LongInt; var CanSelect: Boolean);
+    procedure clbBenchPropsClickCheck(Sender: TObject);
+    procedure seBenchRepsChange(Sender: TObject);
     procedure FormCloseQuery(Sender: TObject; var CanClose: Boolean);
   private
     FUpdatingConnectionToggle: Boolean;
@@ -194,6 +204,9 @@ type
     FBenchCancel: Boolean;
     FBenchResults: TObjectList<TBenchConfig>;
     FBenchInfo: string;
+    FBenchBase: TFDConnection;  { holds the Connection Options values the benchmark starts from }
+    FFormBusy: Boolean;
+    FBusySavedTimer: Boolean;
     procedure Filter(Checked: Boolean; aFilter: string);
     function PrtYN(const yn: boolean): string;
     procedure SetConnection;
@@ -222,9 +235,14 @@ type
     function RunBenchOnce(AConfig: TBenchConfig; AKind: TPerfTestKind; const aTableName: string;
       out ElapsedMs: Double; out RowsProcessed: Integer; out ErrorMsg: string): Boolean;
     procedure SetBenchRunning(ARunning: Boolean);
+    procedure SetFormBusy(ABusy: Boolean);
+    procedure LoadOptionsToUI(AConnection: TFDConnection);
     procedure RankBenchResults(AConfigs: TObjectList<TBenchConfig>);
     procedure ShowBenchResults;
     procedure InitBenchResultsGrid;
+    function IsBenchPropChecked(const AName: string): Boolean;
+    procedure FillBenchPropsList;
+    procedure UpdateBenchPlan;
     function BenchResultsToCsv: string;
 
     procedure SetFDConnectionOptions;
@@ -416,6 +434,7 @@ begin
     cbxBenchTest.Items.Add(PerfTestNames[Kind]);
   cbxBenchTest.ItemIndex := 0;
   InitBenchResultsGrid;
+  FillBenchPropsList;
 
   UpdateConnectionAliveIndicator;
   PageControl.ActivePageIndex := 0;
@@ -522,7 +541,9 @@ begin
   lblProgress.Caption := Format('%s (%d records)', [ATask, ACount]);
   pbProgress.Max := Max(1, Max(ATotal, ACount));
   pbProgress.Position := ACount;
-  pnlFooter.Update;
+  { Pump the queue so the footer repaints and the window does not go "Not Responding";
+    callers lock the form first (SetFormBusy / SetBenchRunning) so this cannot re-enter. }
+  Application.ProcessMessages;
 end;
 
 function TForm1.CollectPerfKeySample(ADataSet: TFDDataSet; AKeyField: TField; ASampleSize: Integer): TArray<Variant>;
@@ -592,7 +613,12 @@ var
   Notes, ErrorMsg: string;
   Description: string;
 begin
-  ExecutePerfTest(cbxPerfTables.Text, Proc, ElapsedMs, RowsProcessed, Notes, ErrorMsg);
+  SetFormBusy(True);
+  try
+    ExecutePerfTest(cbxPerfTables.Text, Proc, ElapsedMs, RowsProcessed, Notes, ErrorMsg);
+  finally
+    SetFormBusy(False);
+  end;
   if ErrorMsg <> '' then
     Notes := 'Error: ' + ErrorMsg;
   if chkPerfUseQuery.Checked
@@ -607,24 +633,29 @@ procedure TForm1.LoadTableNames(ACombo: TComboBox);
 var
   Count: Integer;
 begin
-  EnsurePerfConnection;
+  SetFormBusy(True);
+  try
+    EnsurePerfConnection;
 
-  SQLFDQuery.Close;
-  SQLFDQuery.SQL.Clear;
-  SQLFDQuery.SQL.Add('select t.name from sys.tables t order by t.name');
-  SQLFDQuery.Open;
+    SQLFDQuery.Close;
+    SQLFDQuery.SQL.Clear;
+    SQLFDQuery.SQL.Add('select t.name from sys.tables t order by t.name');
+    SQLFDQuery.Open;
 
-  ACombo.Items.Clear;
-  Count := 0;
-  while not SQLFDQuery.Eof do
-  begin
-    ACombo.Items.Add(SQLFDQuery.FieldByName('name').AsString);
-    Inc(Count);
-    ReportProgress('Loading table names', Count, SQLFDQuery.RecordCount);
-    SQLFDQuery.Next;
+    ACombo.Items.Clear;
+    Count := 0;
+    while not SQLFDQuery.Eof do
+    begin
+      ACombo.Items.Add(SQLFDQuery.FieldByName('name').AsString);
+      Inc(Count);
+      ReportProgress('Loading table names', Count, SQLFDQuery.RecordCount);
+      SQLFDQuery.Next;
+    end;
+    ReportProgress('Loaded table names', Count, Count, True);
+    SQLFDQuery.Close;
+  finally
+    SetFormBusy(False);
   end;
-  ReportProgress('Loaded table names', Count, Count, True);
-  SQLFDQuery.Close;
 end;
 
 procedure TForm1.btnRefreshPerfTablesClick(Sender: TObject);
@@ -855,6 +886,23 @@ begin
     end;
 end;
 
+{ The option groups the Auto Benchmark varies (Fetch, Format, Resource, Update). }
+procedure CopyBenchOptions(ASource, ADest: TFDConnection);
+begin
+  ADest.FetchOptions.Assign(ASource.FetchOptions);
+  ADest.FormatOptions.Assign(ASource.FormatOptions);
+  ADest.ResourceOptions.Assign(ASource.ResourceOptions);
+  ADest.UpdateOptions.Assign(ASource.UpdateOptions);
+end;
+
+{ Delphi's Format has no '+' flag, so the sign is added by hand. }
+function FormatImprovement(APercent: Double): string;
+begin
+  Result := Format('%.1f%%', [APercent]);
+  if APercent >= 0 then
+    Result := '+' + Result;
+end;
+
 function CsvIf(ACondition: Boolean; const AValue: string): string;
 begin
   if ACondition
@@ -926,34 +974,306 @@ begin
     else Result := (Sorted[Mid - 1] + Sorted[Mid]) / 2;
 end;
 
-{ To benchmark another FireDAC property, add a dimension here (one TBenchOption per
-  value to try, plus the caption of the value currently on the Connection Options tab).
-  Every dimension is cross-multiplied with the others. }
+type
+  TBenchEnumSetter =reference to procedure(AConnection: TFDConnection; AValue: Integer);
+  TBenchBoolSetter = reference to procedure(AConnection: TFDConnection; AValue: Boolean);
+
+function MakeEnumOption(const AName: string; ATypeInfo: PTypeInfo; AValue: Integer;
+  const ASetter: TBenchEnumSetter): TBenchOption;
+begin
+  Result.Caption := AName + '=' + GetEnumName(ATypeInfo, AValue);
+  Result.Apply :=
+    procedure(AConnection: TFDConnection)
+    begin
+      ASetter(AConnection, AValue);
+    end;
+end;
+
+{ One option per value of the enumerated type. ACurrent is the value on the
+  Connection Options tab (the radio group's ItemIndex). }
+function MakeEnumDimension(const AGroup, AName: string; ATypeInfo: PTypeInfo; ACurrent: Integer;
+  const ASetter: TBenchEnumSetter): TBenchDimension;
+var
+  TypeData: PTypeData;
+  i: Integer;
+begin
+  TypeData := GetTypeData(ATypeInfo);
+  Result.Name := AGroup + ': ' + AName;
+  Result.Cross := False;
+  Result.CurrentCaption := AName + '=' + GetEnumName(ATypeInfo, Max(TypeData.MinValue, ACurrent));
+  SetLength(Result.Options, TypeData.MaxValue - TypeData.MinValue + 1);
+  for i := TypeData.MinValue to TypeData.MaxValue do
+    Result.Options[i - TypeData.MinValue] := MakeEnumOption(AName, ATypeInfo, i, ASetter);
+end;
+
+function MakeBoolOption(const AName: string; AValue: Boolean; const ASetter: TBenchBoolSetter): TBenchOption;
+begin
+  Result.Caption := AName + '=' + BoolToStr(AValue, True);
+  Result.Apply :=
+    procedure(AConnection: TFDConnection)
+    begin
+      ASetter(AConnection, AValue);
+    end;
+end;
+
+function MakeBoolDimension(const AGroup, AName: string; ACurrent: Boolean;
+  const ASetter: TBenchBoolSetter): TBenchDimension;
+begin
+  Result.Name := AGroup + ': ' + AName;
+  Result.Cross := False;
+  Result.CurrentCaption := AName + '=' + BoolToStr(ACurrent, True);
+  SetLength(Result.Options, 2);
+  Result.Options[0] := MakeBoolOption(AName, False, ASetter);
+  Result.Options[1] := MakeBoolOption(AName, True, ASetter);
+end;
+
+{ FetchOptions.Items / FetchOptions.Cache are sets; benchmark each member on and off. }
+function MakeFetchItemDimension(AItem: TFDFetchItem; AIsCache, ACurrent: Boolean): TBenchDimension;
+var
+  Group: string;
+begin
+  if AIsCache
+    then Group := 'Cache'
+    else Group := 'Items';
+  Result := MakeBoolDimension('Fetch', Group + '.' + GetEnumName(TypeInfo(TFDFetchItem), Ord(AItem)), ACurrent,
+    procedure(AConnection: TFDConnection; AValue: Boolean)
+    var
+      Current: TFDFetchItems;
+    begin
+      if AIsCache
+        then Current := AConnection.FetchOptions.Cache
+        else Current := AConnection.FetchOptions.Items;
+      if AValue
+        then Include(Current, AItem)
+        else Exclude(Current, AItem);
+      if AIsCache
+        then AConnection.FetchOptions.Cache := Current
+        else AConnection.FetchOptions.Items := Current;
+    end);
+end;
+
+function MakeSortLocaleOption(const AName: string; ALocale: Integer): TBenchOption;
+begin
+  Result.Caption := 'SortLocale=' + AName;
+  Result.Apply :=
+    procedure(AConnection: TFDConnection)
+    begin
+      AConnection.FormatOptions.SortLocale := ALocale;
+    end;
+end;
+
+{ FormatOptions.SortOptions is a set; benchmark each member on and off. }
+function MakeSortOptionDimension(AOption: TFDSortOption; ACurrent: Boolean): TBenchDimension;
+begin
+  Result := MakeBoolDimension('Format', 'SortOptions.' + GetEnumName(TypeInfo(TFDSortOption), Ord(AOption)),
+    ACurrent,
+    procedure(AConnection: TFDConnection; AValue: Boolean)
+    var
+      Current: TFDSortOptions;
+    begin
+      Current := AConnection.FormatOptions.SortOptions;
+      if AValue
+        then Include(Current, AOption)
+        else Exclude(Current, AOption);
+      AConnection.FormatOptions.SortOptions := Current;
+    end);
+end;
+
+{ To benchmark another FireDAC property, add a dimension here: a Cross dimension is
+  crossed with the other Cross ones (RowsetSize x Mode); every other dimension is varied
+  on its own against the original configuration. CurrentCaption must be the value held
+  by the Connection Options tab, so it can be recognised as the baseline. }
 function TForm1.BuildBenchDimensions: TArray<TBenchDimension>;
 const
   RowsetSizes: array[0..3] of Integer = (50, 100, 500, 1000);
   FetchModes: array[0..1] of TFDFetchMode = (fmOnDemand, fmAll);
+  SortLocaleNames: array[0..6] of string = ('LOCALE_SYSTEM_DEFAULT', 'LOCALE_USER_DEFAULT',
+    'LOCALE_CUSTOM_DEFAULT', 'LOCALE_CUSTOM_UNSPECIFIED', 'LOCALE_CUSTOM_UI_DEFAULT',
+    'LOCALE_NEUTRAL', 'LOCALE_INVARIANT');
+  SortLocaleValues: array[0..6] of Integer = (LOCALE_SYSTEM_DEFAULT, LOCALE_USER_DEFAULT,
+    LOCALE_CUSTOM_DEFAULT, LOCALE_CUSTOM_UNSPECIFIED, LOCALE_CUSTOM_UI_DEFAULT,
+    LOCALE_NEUTRAL, LOCALE_INVARIANT);
 var
+  Dims: TList<TBenchDimension>;
   Dim: TBenchDimension;
+  Item: TFDFetchItem;
+  SortOption: TFDSortOption;
   i: Integer;
 begin
-  SetLength(Result, 2);
+  Dims := TList<TBenchDimension>.Create;
+  try
+    Dim.Name := 'Fetch: RowsetSize';
+    Dim.Cross := True;
+    Dim.CurrentCaption := 'RowsetSize=' + IntToStr(StrToInt(edRowsetSize.Text));
+    SetLength(Dim.Options, Length(RowsetSizes));
+    for i := 0 to High(RowsetSizes) do
+      Dim.Options[i] := MakeRowsetSizeOption(RowsetSizes[i]);
+    Dims.Add(Dim);
 
-  Dim.CurrentCaption := 'RowsetSize=' + IntToStr(StrToInt(edRowsetSize.Text));
-  SetLength(Dim.Options, Length(RowsetSizes));
-  for i := 0 to High(RowsetSizes) do
-    Dim.Options[i] := MakeRowsetSizeOption(RowsetSizes[i]);
-  Result[0] := Dim;
+    Dim.Name := 'Fetch: Mode';
+    Dim.Cross := True;
+    Dim.CurrentCaption := FetchModeCaption(TFDFetchMode(Max(0, rgFetchMode.ItemIndex)));
+    SetLength(Dim.Options, Length(FetchModes));
+    for i := 0 to High(FetchModes) do
+      Dim.Options[i] := MakeFetchModeOption(FetchModes[i]);
+    Dims.Add(Dim);
 
-  Dim.CurrentCaption := FetchModeCaption(TFDFetchMode(Max(0, rgFetchMode.ItemIndex)));
-  SetLength(Dim.Options, Length(FetchModes));
-  for i := 0 to High(FetchModes) do
-    Dim.Options[i] := MakeFetchModeOption(FetchModes[i]);
-  Result[1] := Dim;
+    { FetchOptions }
+    Dims.Add(MakeEnumDimension('Fetch', 'CursorKind', TypeInfo(TFDCursorKind), rgCursorKind.ItemIndex,
+      procedure(C: TFDConnection; V: Integer) begin C.FetchOptions.CursorKind := TFDCursorKind(V); end));
+    Dims.Add(MakeEnumDimension('Fetch', 'AutoFetchAll', TypeInfo(TFDAutoFetchAll), rgAutoFetchAll.ItemIndex,
+      procedure(C: TFDConnection; V: Integer) begin C.FetchOptions.AutoFetchAll := TFDAutoFetchAll(V); end));
+    Dims.Add(MakeEnumDimension('Fetch', 'RecordCountMode', TypeInfo(TFDRecordCountMode), rgRecordCountMode.ItemIndex,
+      procedure(C: TFDConnection; V: Integer) begin C.FetchOptions.RecordCountMode := TFDRecordCountMode(V); end));
+    Dims.Add(MakeBoolDimension('Fetch', 'LiveWindowParanoic', chkLiveWindowParanoic.Checked,
+      procedure(C: TFDConnection; V: Boolean) begin C.FetchOptions.LiveWindowParanoic := V; end));
+    Dims.Add(MakeBoolDimension('Fetch', 'LiveWindowFastFirst', chkLiveWindowFastFirst.Checked,
+      procedure(C: TFDConnection; V: Boolean) begin C.FetchOptions.LiveWindowFastFirst := V; end));
+    Dims.Add(MakeBoolDimension('Fetch', 'AutoClose', chkAutoClose.Checked,
+      procedure(C: TFDConnection; V: Boolean) begin C.FetchOptions.AutoClose := V; end));
+    Dims.Add(MakeBoolDimension('Fetch', 'Unidirectional', chkUnidirectional.Checked,
+      procedure(C: TFDConnection; V: Boolean) begin C.FetchOptions.Unidirectional := V; end));
+    Dims.Add(MakeBoolDimension('Fetch', 'DetailOptimize', chkDetailOptimize.Checked,
+      procedure(C: TFDConnection; V: Boolean) begin C.FetchOptions.DetailOptimize := V; end));
+    Dims.Add(MakeBoolDimension('Fetch', 'DetailCascade', chkDetailCascade.Checked,
+      procedure(C: TFDConnection; V: Boolean) begin C.FetchOptions.DetailCascade := V; end));
+    Dims.Add(MakeBoolDimension('Fetch', 'DetailServerCascade', chkDetailServerCascade.Checked,
+      procedure(C: TFDConnection; V: Boolean) begin C.FetchOptions.DetailServerCascade := V; end));
+    for Item := Low(TFDFetchItem) to High(TFDFetchItem) do
+      Dims.Add(MakeFetchItemDimension(Item, False, ckFetchItem.Items[Ord(Item)].Checked));
+    for Item := Low(TFDFetchItem) to High(TFDFetchItem) do
+      Dims.Add(MakeFetchItemDimension(Item, True, ckCache.Items[Ord(Item)].Checked));
+
+    { FormatOptions }
+    Dims.Add(MakeBoolDimension('Format', 'StrsTrim', chkStrsTrim.Checked,
+      procedure(C: TFDConnection; V: Boolean) begin C.FormatOptions.StrsTrim := V; end));
+    Dims.Add(MakeBoolDimension('Format', 'StrsEmpty2Null', chkStrsEmpty2Null.Checked,
+      procedure(C: TFDConnection; V: Boolean) begin C.FormatOptions.StrsEmpty2Null := V; end));
+    Dims.Add(MakeBoolDimension('Format', 'StrsTrim2Len', chkStrsTrim2Len.Checked,
+      procedure(C: TFDConnection; V: Boolean) begin C.FormatOptions.StrsTrim2Len := V; end));
+    Dims.Add(MakeBoolDimension('Format', 'CheckPrecision', chkCheckPrecision.Checked,
+      procedure(C: TFDConnection; V: Boolean) begin C.FormatOptions.CheckPrecision := V; end));
+    Dims.Add(MakeBoolDimension('Format', 'ADOCompatibility', chkADOCompatibility.Checked,
+      procedure(C: TFDConnection; V: Boolean) begin C.FormatOptions.ADOCompatibility := V; end));
+    Dims.Add(MakeBoolDimension('Format', 'DataSnapCompatibility', chkDataSnapCompatibility.Checked,
+      procedure(C: TFDConnection; V: Boolean) begin C.FormatOptions.DataSnapCompatibility := V; end));
+    Dims.Add(MakeBoolDimension('Format', 'QuoteIdentifiers', chkQuoteIdentifiers.Checked,
+      procedure(C: TFDConnection; V: Boolean) begin C.FormatOptions.QuoteIdentifiers := V; end));
+
+    { SortLocale: same order as the rgSortLocate radio group. }
+    Dim.Name := 'Format: SortLocale';
+    Dim.Cross := False;
+    if rgSortLocate.ItemIndex in [0..High(SortLocaleNames)]
+      then Dim.CurrentCaption := 'SortLocale=' + SortLocaleNames[rgSortLocate.ItemIndex]
+      else Dim.CurrentCaption := '';
+    SetLength(Dim.Options, Length(SortLocaleNames));
+    for i := 0 to High(SortLocaleNames) do
+      Dim.Options[i] := MakeSortLocaleOption(SortLocaleNames[i], SortLocaleValues[i]);
+    Dims.Add(Dim);
+
+    for SortOption := Low(TFDSortOption) to High(TFDSortOption) do
+      Dims.Add(MakeSortOptionDimension(SortOption, ckSortOptions.Items[Ord(SortOption)].Checked));
+
+    { ResourceOptions }
+    Dims.Add(MakeBoolDimension('Resource', 'DirectExecute', chkDirectExecute.Checked,
+      procedure(C: TFDConnection; V: Boolean) begin C.ResourceOptions.DirectExecute := V; end));
+    Dims.Add(MakeBoolDimension('Resource', 'MacroCreate', chkMacroCreate.Checked,
+      procedure(C: TFDConnection; V: Boolean) begin C.ResourceOptions.MacroCreate := V; end));
+    Dims.Add(MakeBoolDimension('Resource', 'MacroExpand', chkMacroExpand.Checked,
+      procedure(C: TFDConnection; V: Boolean) begin C.ResourceOptions.MacroExpand := V; end));
+    Dims.Add(MakeBoolDimension('Resource', 'SilentMode', chkSilentMode.Checked,
+      procedure(C: TFDConnection; V: Boolean) begin C.ResourceOptions.SilentMode := V; end));
+    Dims.Add(MakeBoolDimension('Resource', 'ServerOutput', chkServerOutput.Checked,
+      procedure(C: TFDConnection; V: Boolean) begin C.ResourceOptions.ServerOutput := V; end));
+
+    { UpdateOptions }
+    Dims.Add(MakeEnumDimension('Update', 'LockMode', TypeInfo(TFDLockMode), rgLockMode.ItemIndex,
+      procedure(C: TFDConnection; V: Integer) begin C.UpdateOptions.LockMode := TFDLockMode(V); end));
+    Dims.Add(MakeEnumDimension('Update', 'LockPoint', TypeInfo(TFDLockPoint), rgLockPoint.ItemIndex,
+      procedure(C: TFDConnection; V: Integer) begin C.UpdateOptions.LockPoint := TFDLockPoint(V); end));
+    Dims.Add(MakeEnumDimension('Update', 'UpdateMode', TypeInfo(DB.TUpdateMode), rgUpdateMode.ItemIndex,
+      procedure(C: TFDConnection; V: Integer) begin C.UpdateOptions.UpdateMode := DB.TUpdateMode(V); end));
+    Dims.Add(MakeEnumDimension('Update', 'FetchGeneratorsPoint', TypeInfo(TFDFetchGeneratorsPoint),
+      rgFetchGeneratorsPoint.ItemIndex,
+      procedure(C: TFDConnection; V: Integer) begin C.UpdateOptions.FetchGeneratorsPoint := TFDFetchGeneratorsPoint(V); end));
+    Dims.Add(MakeBoolDimension('Update', 'LockWait', chkLockWait.Checked,
+      procedure(C: TFDConnection; V: Boolean) begin C.UpdateOptions.LockWait := V; end));
+    Dims.Add(MakeBoolDimension('Update', 'AutoCommitUpdates', chkAutoCommitUpdates.Checked,
+      procedure(C: TFDConnection; V: Boolean) begin C.UpdateOptions.AutoCommitUpdates := V; end));
+
+    Result := Dims.ToArray;
+  finally
+    Dims.Free;
+  end;
 end;
 
-{ Cross product of all dimensions. The configuration currently on the Connection
-  Options tab is flagged as the baseline (added if it is not one of the combinations). }
+procedure TForm1.FillBenchPropsList;
+var
+  Dim: TBenchDimension;
+begin
+  clbBenchProps.Items.BeginUpdate;
+  try
+    clbBenchProps.Items.Clear;
+    for Dim in BuildBenchDimensions do
+      clbBenchProps.Checked[clbBenchProps.Items.Add(Dim.Name)] := True;
+  finally
+    clbBenchProps.Items.EndUpdate;
+  end;
+  UpdateBenchPlan;
+end;
+
+procedure TForm1.btnBenchPropsSelectClick(Sender: TObject);
+var
+  i: Integer;
+begin
+  for i := 0 to clbBenchProps.Items.Count - 1 do
+    clbBenchProps.Checked[i] := TComponent(Sender).Tag = 1;
+  UpdateBenchPlan;
+end;
+
+procedure TForm1.clbBenchPropsClickCheck(Sender: TObject);
+begin
+  UpdateBenchPlan;
+end;
+
+procedure TForm1.seBenchRepsChange(Sender: TObject);
+begin
+  UpdateBenchPlan;
+end;
+
+{ Shows how many configurations/runs the current selection will execute. }
+procedure TForm1.UpdateBenchPlan;
+var
+  Configs: TObjectList<TBenchConfig>;
+begin
+  if FBenchRunning or (csLoading in ComponentState) or (clbBenchProps.Items.Count = 0) then
+    Exit;
+  try
+    Configs := BuildBenchConfigs;
+    try
+      lblBenchStatus.Caption := Format('Plan: %d configurations x %d repetitions = %d measured runs (+1 warm-up)',
+        [Configs.Count, seBenchReps.Value, Configs.Count * seBenchReps.Value]);
+    finally
+      Configs.Free;
+    end;
+  except
+    on E: Exception do
+      lblBenchStatus.Caption := 'Cannot build the plan: ' + E.Message;
+  end;
+end;
+
+function TForm1.IsBenchPropChecked(const AName: string): Boolean;
+var
+  Index: Integer;
+begin
+  Index := clbBenchProps.Items.IndexOf(AName);
+  Result := (Index >= 0) and clbBenchProps.Checked[Index];
+end;
+
+{ Cross product of the checked Cross dimensions (RowsetSize x Mode). The configuration
+  currently on the Connection Options tab is flagged as the baseline (added if it is not
+  one of the combinations). Each other checked dimension then adds one configuration per
+  value that differs from the original, applied on top of the baseline. }
 function TForm1.BuildBenchConfigs: TObjectList<TBenchConfig>;
 var
   Dims: TArray<TBenchDimension>;
@@ -970,6 +1290,8 @@ begin
     BaselineCaption := '';
     for Dim in Dims do
     begin
+      if (not Dim.Cross) or (not IsBenchPropChecked(Dim.Name)) then
+        Continue;
       if BaselineCaption = ''
         then BaselineCaption := Dim.CurrentCaption
         else BaselineCaption := BaselineCaption + ', ' + Dim.CurrentCaption;
@@ -1000,6 +1322,18 @@ begin
       Result.Insert(0, Baseline);
     end;
     Baseline.IsBaseline := True;
+
+    for Dim in Dims do
+    begin
+      if Dim.Cross or (not IsBenchPropChecked(Dim.Name)) then
+        Continue;
+      for Opt in Dim.Options do
+        if not SameText(Opt.Caption, Dim.CurrentCaption) then
+          Result.Add(Baseline.Combine(Opt));
+    end;
+
+    if Baseline.Caption = '' then
+      Baseline.Caption := 'Connection Options values';
   except
     Result.Free;
     raise;
@@ -1019,9 +1353,12 @@ begin
   try
     { OpenTable would reset the options from the UI if the connection were down. }
     EnsurePerfConnection;
-    SetFetchOptions(SQLFDConnection);
+    CopyBenchOptions(FBenchBase, SQLFDConnection);
     if Assigned(AConfig.Apply) then
       AConfig.Apply(SQLFDConnection);
+    { Show the configuration being measured on the option tabs. }
+    LoadOptionsToUI(SQLFDConnection);
+    Application.ProcessMessages;
   except
     on E: Exception do
     begin
@@ -1031,6 +1368,54 @@ begin
   end;
   ExecutePerfTest(aTableName, GetPerfTestProc(AKind), ElapsedMs, RowsProcessed, Notes, ErrorMsg);
   Result := ErrorMsg = '';
+end;
+
+procedure TForm1.LoadOptionsToUI(AConnection: TFDConnection);
+begin
+  LoadFetchOptions(AConnection);
+  LoadFormatOptions(AConnection);
+  LoadResourceOptions(AConnection);
+  LoadUpdateOptions(AConnection);
+end;
+
+{ Locks the inputs (and pauses the liveness ping) while a manual operation pumps the
+  message queue to keep the footer painted. }
+{ Selecting a results row shows that configuration's full settings on the Fetch, Resource
+  and Update tabs: the benchmark's starting values with the row's overrides applied. The
+  "Configuration" column only lists the settings that differ from the original. }
+procedure TForm1.grdBenchResultsSelectCell(Sender: TObject; ACol, ARow: LongInt; var CanSelect: Boolean);
+var
+  Scratch: TFDConnection;
+begin
+  if FBenchRunning or (FBenchResults = nil) or (FBenchBase = nil) or
+     (ARow < 1) or (ARow > FBenchResults.Count) then
+    Exit;
+
+  Scratch := TFDConnection.Create(nil);
+  try
+    CopyBenchOptions(FBenchBase, Scratch);
+    if Assigned(FBenchResults[ARow - 1].Apply) then
+      FBenchResults[ARow - 1].Apply(Scratch);
+    LoadOptionsToUI(Scratch);
+  finally
+    Scratch.Free;
+  end;
+end;
+
+procedure TForm1.SetFormBusy(ABusy: Boolean);
+begin
+  if ABusy then
+  begin
+    FBusySavedTimer := ConnectionCheckTimer.Enabled;
+    ConnectionCheckTimer.Enabled := False;
+  end
+  else
+    ConnectionCheckTimer.Enabled := FBusySavedTimer;
+  FFormBusy := ABusy;
+  pnlTop.Enabled := not ABusy;
+  PerfTestsTab.Enabled := not ABusy;
+  AutoBenchmarkTab.Enabled := not ABusy;
+  PageControlConnection.Enabled := not ABusy;
 end;
 
 procedure TForm1.SetBenchRunning(ARunning: Boolean);
@@ -1044,10 +1429,13 @@ begin
   btnBenchRefreshTables.Enabled := not ARunning;
   rgBenchDataSet.Enabled := not ARunning;
   seBenchReps.Enabled := not ARunning;
+  clbBenchProps.Enabled := not ARunning;
+  btnBenchPropsAll.Enabled := not ARunning;
+  btnBenchPropsNone.Enabled := not ARunning;
   { Nothing else may touch the connection/datasets while the benchmark owns them. }
-  Panel2.Enabled := not ARunning;
+  pnlTop.Enabled := not ARunning;
   PerfTestsTab.Enabled := not ARunning;
-  ConnectionOptionsTab.Enabled := not ARunning;
+  PageControlConnection.Enabled := not ARunning;
 end;
 
 procedure TForm1.btnBenchRefreshTablesClick(Sender: TObject);
@@ -1098,6 +1486,14 @@ begin
     SavedTimer := ConnectionCheckTimer.Enabled;
     ConnectionCheckTimer.Enabled := False;
     FBenchCancel := False;
+    { Snapshot of the Connection Options tabs: every run starts from it, because the tabs
+      themselves are rewritten to show each configuration being measured. }
+    FreeAndNil(FBenchBase);
+    FBenchBase := TFDConnection.Create(nil);
+    SetFetchOptions(FBenchBase);
+    SetResourceOptions(FBenchBase);
+    SetFormatOptions(FBenchBase);
+    SetUpdateOptions(FBenchBase);
     SetBenchRunning(True);
     try
       chkPerfUseQuery.Checked := rgBenchDataSet.ItemIndex = 1;
@@ -1142,7 +1538,7 @@ begin
           else
           begin
             Inc(Cfg.ErrorCount);
-            Cfg.Notes := ErrorMsg;
+            Cfg.Notes := 'Error: ' + ErrorMsg;
           end;
           Inc(Done);
           pbBench.Position := Done;
@@ -1163,11 +1559,10 @@ begin
       lblBenchStatus.Caption := Prefix + ': ' + FBenchInfo;
     finally
       chkPerfUseQuery.Checked := SavedUseQuery;
-      try
-        SetFetchOptions(SQLFDConnection);
-      except
-        { UI values were already applied once; nothing more to restore if they are invalid. }
-      end;
+      { Put the original values back on the connection and on the option tabs. }
+      CopyBenchOptions(FBenchBase, SQLFDConnection);
+      { FBenchBase is kept so a results row can be shown on the option tabs later. }
+      LoadOptionsToUI(FBenchBase);
       ConnectionCheckTimer.Enabled := SavedTimer;
       SetBenchRunning(False);
     end;
@@ -1238,7 +1633,7 @@ begin
       if Cfg.IsBaseline then
         Improvement := '0.0% (original)'
       else if (Baseline <> nil) and (Baseline.Samples.Count > 0) and (Baseline.Average > 0) then
-        Improvement := Format('%+.1f%%', [(Baseline.Average - Cfg.Average) / Baseline.Average * 100])
+        Improvement := FormatImprovement((Baseline.Average - Cfg.Average) / Baseline.Average * 100)
       else
         Improvement := '-';
     end;
@@ -1329,7 +1724,7 @@ end;
 procedure TForm1.FormCloseQuery(Sender: TObject; var CanClose: Boolean);
 begin
   { The benchmark owns the connection; ask it to stop and let the user close afterwards. }
-  CanClose := not FBenchRunning;
+  CanClose := not (FBenchRunning or FFormBusy);
   if FBenchRunning then
     FBenchCancel := True;
 end;
@@ -1337,6 +1732,7 @@ end;
 destructor TForm1.Destroy;
 begin
   FBenchResults.Free;
+  FBenchBase.Free;
   inherited;
 end;
 
