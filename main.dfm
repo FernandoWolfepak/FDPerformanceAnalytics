@@ -10,6 +10,7 @@ object Form1: TForm1
   Font.Height = -11
   Font.Name = 'Tahoma'
   Font.Style = []
+  OnCloseQuery = FormCloseQuery
   OnShow = FormShow
   TextHeight = 13
   object Panel2: TPanel
@@ -133,6 +134,15 @@ object Form1: TForm1
       TabOrder = 5
       OnClick = UseAzureADInteractiveCBClick
     end
+    object UseAzureADIntegratedCB: TCheckBox
+      Left = 416
+      Top = 78
+      Width = 155
+      Height = 17
+      Caption = 'Azure AD Integrated (silent)'
+      TabOrder = 8
+      OnClick = UseAzureADIntegratedCBClick
+    end
     object btnConnect: TButton
       Left = 576
       Top = 71
@@ -156,7 +166,7 @@ object Form1: TForm1
     Left = 0
     Top = 364
     Width = 783
-    Height = 142
+    Height = 101
     Align = alClient
     DataSource = DataSource1
     TabOrder = 1
@@ -171,7 +181,7 @@ object Form1: TForm1
     Top = 100
     Width = 783
     Height = 264
-    ActivePage = PerfTestsTab
+    ActivePage = AutoBenchmarkTab
     Align = alTop
     TabOrder = 2
     object PerfTestsTab: TTabSheet
@@ -268,6 +278,134 @@ object Form1: TForm1
         TabOrder = 8
       end
     end
+    object AutoBenchmarkTab: TTabSheet
+      Caption = 'Auto Benchmark'
+      ImageIndex = 3
+      object lblBenchTest: TLabel
+        Left = 16
+        Top = 16
+        Width = 25
+        Height = 13
+        Caption = 'Test:'
+      end
+      object lblBenchTable: TLabel
+        Left = 232
+        Top = 16
+        Width = 30
+        Height = 13
+        Caption = 'Table:'
+      end
+      object lblBenchReps: TLabel
+        Left = 16
+        Top = 53
+        Width = 58
+        Height = 13
+        Caption = 'Repetitions:'
+      end
+      object lblBenchStatus: TLabel
+        Left = 22
+        Top = 78
+        Width = 730
+        Height = 13
+        AutoSize = False
+      end
+      object cbxBenchTest: TComboBox
+        Left = 52
+        Top = 13
+        Width = 170
+        Height = 21
+        Style = csDropDownList
+        TabOrder = 0
+      end
+      object cbxBenchTables: TComboBox
+        Left = 270
+        Top = 13
+        Width = 150
+        Height = 21
+        TabOrder = 1
+      end
+      object btnBenchRefreshTables: TButton
+        Left = 426
+        Top = 11
+        Width = 70
+        Height = 25
+        Caption = 'Refresh'
+        TabOrder = 2
+        OnClick = btnBenchRefreshTablesClick
+      end
+      object rgBenchDataSet: TRadioGroup
+        Left = 510
+        Top = 0
+        Width = 250
+        Height = 40
+        Caption = 'DataSet'
+        Columns = 2
+        ItemIndex = 0
+        Items.Strings = (
+          'TFDTable'
+          'TFDQuery')
+        TabOrder = 3
+      end
+      object seBenchReps: TSpinEdit
+        Left = 83
+        Top = 50
+        Width = 50
+        Height = 22
+        MaxValue = 100
+        MinValue = 1
+        TabOrder = 4
+        Value = 5
+      end
+      object btnBenchRun: TButton
+        Left = 145
+        Top = 48
+        Width = 130
+        Height = 25
+        Caption = 'Run Auto Benchmark'
+        TabOrder = 5
+        OnClick = btnBenchRunClick
+      end
+      object btnBenchCancel: TButton
+        Left = 281
+        Top = 48
+        Width = 70
+        Height = 25
+        Caption = 'Cancel'
+        Enabled = False
+        TabOrder = 6
+        OnClick = btnBenchCancelClick
+      end
+      object btnBenchExport: TButton
+        Left = 357
+        Top = 48
+        Width = 90
+        Height = 25
+        Caption = 'Export CSV'
+        Enabled = False
+        TabOrder = 7
+        OnClick = btnBenchExportClick
+      end
+      object pbBench: TProgressBar
+        Left = 460
+        Top = 50
+        Width = 300
+        Height = 20
+        TabOrder = 8
+      end
+      object grdBenchResults: TStringGrid
+        Left = 16
+        Top = 96
+        Width = 754
+        Height = 134
+        ColCount = 7
+        DefaultRowHeight = 18
+        FixedCols = 0
+        RowCount = 1
+        FixedRows = 0
+        Options = [goFixedVertLine, goFixedHorzLine, goVertLine, goHorzLine, goRangeSelect, goColMoving, goFixedRowDefAlign]
+        TabOrder = 9
+      end
+    end
     object ConnectionOptionsTab: TTabSheet
       Caption = 'Connection Options'
       ImageIndex = 1
@@ -278,7 +416,7 @@ object Form1: TForm1
         Height = 236
         Align = alClient
         TabOrder = 0
-        Properties.ActivePage = FetchOptionsTab
+        Properties.ActivePage = UpdateOptionsTab
         Properties.CustomButtons.Buttons = <>
         ClientRectBottom = 232
         ClientRectLeft = 4
@@ -795,6 +933,36 @@ object Form1: TForm1
           end
         end
       end
+    end
+  end
+  object pnlFooter: TPanel
+    Left = 0
+    Top = 465
+    Width = 783
+    Height = 41
+    Align = alBottom
+    Anchors = [akLeft, akTop, akBottom]
+    BevelOuter = bvNone
+    TabOrder = 3
+    object lblProgress: TLabel
+      AlignWithMargins = True
+      Left = 3
+      Top = 3
+      Width = 777
+      Height = 15
+      Align = alClient
+      Caption = 'Ready'
+      Layout = tlCenter
+      ExplicitWidth = 31
+      ExplicitHeight = 13
+    end
+    object pbProgress: TProgressBar
+      Left = 0
+      Top = 21
+      Width = 783
+      Height = 20
+      Align = alBottom
+      TabOrder = 0
     end
   end
   object ConnectionCheckTimer: TTimer
