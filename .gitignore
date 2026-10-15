@@ -44,6 +44,7 @@
 *.dll
 *.bpl
 *.bpi
+*.csv
 *.dcp
 *.so
 *.apk

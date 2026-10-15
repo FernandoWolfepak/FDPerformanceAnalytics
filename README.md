@@ -6,8 +6,8 @@ options against a SQL Server (including Azure SQL) database.
 
 ## What it does
 
-- **Connect** via Windows (OS) authentication, SQL authentication, or Azure AD
-  Interactive authentication.
+- **Connect** via Windows (OS) authentication, SQL authentication, Azure AD
+  Interactive authentication, or Azure AD Integrated (silent) authentication.
 - **Connection Options tab** — toggle every `TFDConnection` sub-option group
   (`FetchOptions`, `FormatOptions`, `ResourceOptions`, `UpdateOptions`)
   through UI controls and apply/reload them live.
@@ -24,33 +24,19 @@ options against a SQL Server (including Azure SQL) database.
   appends a row to a results grid — elapsed time (auto-formatted as
   ms/s/min), row count, and notes — so different connection-option
   configurations can be compared side by side.
+- **Auto Benchmark tab** — automatically compares connection-option
+  configurations instead of changing them by hand:
+  - Pick the test (Full Iteration, FindKey, SetRange or Locate), table,
+    dataset kind (`TFDTable`/`TFDQuery`) and number of repetitions.
+  - Check which `FetchOptions`, `FormatOptions`, `ResourceOptions` and
+    `UpdateOptions` properties to vary. `RowsetSize` and `Mode` are combined
+    as a cross product; every other checked property is varied one at a time
+    on top of the baseline.
+  - The configuration currently set on the Connection Options tab is the
+    baseline ("Original"). A plan summary (configurations x repetitions, plus
+    one warm-up run) is shown before you start.
+  - Results show average/median time and % improvement vs. the baseline,
+    ranked best first, with a progress bar and a Cancel button.
+  - **Export CSV** saves the ranked results (including the per-run samples
+    and any errors).
 
-## Build
-
-Delphi project (`FDPerformanceAnalytics.dproj`, Delphi 11.x, Win32). Build
-with the Delphi IDE, or from the command line:
-
-```bash
-msbuild FDPerformanceAnalytics.dproj /t:Build /p:Config=Debug /p:Platform=Win32
-msbuild FDPerformanceAnalytics.dproj /t:Build /p:Config=Release /p:Platform=Win32
-```
-
-If `msbuild`/`dcc32` aren't on `PATH`, the .NET Framework's MSBuild works
-too, as long as `BDS`/`BDSBIN` point at the RAD Studio install (required by
-`CodeGear.Delphi.Targets`):
-
-```bash
-export BDS="C:\Program Files (x86)\Embarcadero\Studio\22.0"
-export BDSBIN="C:\Program Files (x86)\Embarcadero\Studio\22.0\bin"
-"C:/Windows/Microsoft.NET/Framework64/v4.0.30319/MSBuild.exe" FDPerformanceAnalytics.dproj /t:Build /p:Config=Debug /p:Platform=Win32
-```
-
-There is no lint or test tooling in this repo — no unit tests, no test
-runner, no CI pipeline.
-
-## More info
-
-See [CLAUDE.md](CLAUDE.md) for architecture notes and conventions, and
-[PERFORMANCE_TESTS_PLAN.md](PERFORMANCE_TESTS_PLAN.md) /
-[PERFORMANCE_TESTS_PROGRESS.md](PERFORMANCE_TESTS_PROGRESS.md) for the
-Performance Tests feature's design and implementation status.
